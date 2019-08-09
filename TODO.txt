@@ -1,6 +1,6 @@
 #TODO: 
-# function total winrate per map
-# bans by map
+#save to json => test
+# bans by map -> test
 # modular size of subplots -> test
-# WR calcs => to functions
+# WR calcs => to functions -> test
 
