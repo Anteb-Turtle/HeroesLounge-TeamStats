@@ -1,6 +1,5 @@
 #TODO: 
-#save to json => test
-# bans by map -> test
-# modular size of subplots -> test
-# WR calcs => to functions -> test
+# display bans
+# improve readability
+
 

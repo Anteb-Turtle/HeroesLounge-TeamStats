@@ -19,9 +19,9 @@ import formatdata as fd
 # =============================================================================
 # INPUTS
 # =============================================================================
-team_shortname = 'JTFM' # enter team name abbreviation
-team_longname = 'Jaina The Frost Mage' # enter full name of the team
-list_of_last_seasons = [1, 2, 3] # list of integers: 0 is current season, 1 is past season, ...
+team_shortname = 'Turtles' # enter team name abbreviation
+team_longname = 'Turtle Team' # enter full name of the team
+list_of_last_seasons = [0, 1, 2] # list of integers: 0 is current season, 1 is past season, ...
 plot_results = 'yes' # 'yes' to show bar plots of statistics
 save_json = 'yes' # 'yes' to save data gathered to json
 save_excel =  'yes' # 'yes' to save formated data to excel
@@ -36,7 +36,7 @@ url = "https://heroeslounge.gg/team/view/"+team_shortname
 r = requests.get(url)
 result = requests.get(url)
 page = result.text
-doc = soup(page, "html5")
+doc = soup(page, features="html5lib")
 print('Request completed')
 print('\n')
 
@@ -70,7 +70,7 @@ for link in matches_links:
     result1 = requests.get(link)
     print('Request completed')
     page1 = result1.text
-    doc1 = soup(page1, "html5")
+    doc1 = soup(page1, features="html5lib")
     games = doc1.find_all('div', {'class': 'tab-pane'})
     games_id = [i.get('id') for i in games]
 
@@ -149,7 +149,7 @@ if save_json == 'yes':
 
 ## Total and Map winrate
 map_list, map_uni = fd.get_maplist(matchs_data)
-results = fd.get_results(match_data, team_longname)
+results = fd.get_results(matchs_data, team_longname)
 team_winrate = fd.get_global_winrate(matchs_data, team_longname)
 print(team_longname, ' total winrate over chosen seasons: \n', team_winrate, '%\n')
 
@@ -171,7 +171,7 @@ picks = fd.get_picks(matchs_data, team_longname)
 players = fd.get_players(picks)
 
 # get heroes played per player
-heroes_played = fd.get_heroesplayed_players(match_data, team_longname)
+heroes_played = fd.get_heroesplayed_players(matchs_data, team_longname)
 
 ## caculate wr per hero per player
 heroes_played_wr, heroes_played_played = fd.get_heroeswr_perplayer(players, heroes_played)
@@ -187,14 +187,14 @@ picks = fd.get_picks(matchs_data, team_longname)
 
 ## get list of maps and results
 map_list, maps = fd.get_maplist(matchs_data)
-results = fd.get_results(match_data, team_longname)
+results = fd.get_results(matchs_data, team_longname)
 
 ## get heroes played per map
-heroes_map, bans_map = fd.get_heroesplayed_maps(map_list, maps, picks, results)
+heroes_map, bans_map = fd.get_heroesplayed_maps(map_list, maps, picks, results, bans)
 
 ## caculate wr per hero per map
-heroes_map_wr, heroes_map_played, map_bans = fd.get_heroeswr_permap(heroes_map, bans_map)
-print('List of heroes and WR for each map :\n', heroes_map, '\n')
+heroes_map_wr, heroes_map_played, map_bans = fd.get_heroeswr_permap(maps, heroes_map, bans_map)
+print('List of heroes and WR for each map :\n', heroes_map_wr, '\n')
 
 # =============================================================================
 
@@ -236,5 +236,5 @@ if plot_results == 'yes':
     plt.show()
 
 
-    fun.display_team_stats(df_player_wr, df_player_played, team_winrate, max_player=6, team_name=team_shortname)
-    fun.display_map_stats(df_map_wr, df_map_played, df_wr_bymap, team_name='JTFM')
+    fun.display_team_stats(df_player_wr, df_player_played, team_winrate, max_player=5, team_name=team_shortname)
+    fun.display_map_stats(df_map_wr, df_map_played, df_wr_bymap, team_name=team_shortname)

@@ -4,8 +4,8 @@ Other functions:
     Sort/save/display
 """
 
-#import pandas as pd
-#from matplotlib import pyplot as plt
+import pandas as pd
+from matplotlib import pyplot as plt
 
 
 def dict_to_dataframe(dic):
@@ -93,11 +93,14 @@ def display_team_stats(WR_df, Played_df, team_wr, max_player=5, team_name=''):
     """
 #    ax=[None]*6
 #    fig, ((ax[0],ax[1],ax[2]),(ax[3],ax[4],ax[5])) = plt.subplots(2,3)
-    n_lines = max_player//3+1
+    n_lines = (max_player-1)//3+1
     fig, ax = plt.subplots(n_lines, 3)
     i = 0
     for player in list(WR_df.iloc[0:max_player, :].index):
-        team_stats_subplot(WR_df, Played_df, team_wr, ax[i//3, i%3], name=player, team_name=team_name)
+        if n_lines > 1:
+            team_stats_subplot(WR_df, Played_df, team_wr, ax[i//3, i%3], name=player, team_name=team_name)
+        else:
+            team_stats_subplot(WR_df, Played_df, team_wr, ax[i], name=player, team_name=team_name)
         i += 1
 
     plt.tight_layout()
