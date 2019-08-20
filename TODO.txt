@@ -1,5 +1,9 @@
 #TODO: 
-# display bans
-# improve readability
-
+# add color to plots -> Blues colormap -> to check
+# WR by player -> computed -> add to threshold?
+# use weighted average for highlighting picks -> to check
+# different highlights for bans -> to check
+# threshold for bans -> to check
+# check map highlights
+# uniform display functions for map/player?
 

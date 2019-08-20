@@ -207,12 +207,13 @@ df_player_played = fun.dict_to_dataframe(heroes_played_played)
 df_map_wr = fun.dict_to_dataframe(heroes_map_wr)
 df_map_played = fun.dict_to_dataframe(heroes_map_played)
 df_wr_bymap = pd.DataFrame.from_dict(winrate_bymap, orient='index', columns=['WR'])
+df_bans_map = fun.dict_to_dataframe(map_bans)
 
 ## Store dataframes in an excel file ##
 if save_excel == 'yes':
     fun.save_to_excel(team_shortname+'_data', [df_map_wr, df_map_played, \
-                    df_player_wr, df_player_played, df_wr_bymap], \
-                    ['map wr', 'map played', 'player wr', 'player played', 'total map wr'])
+                    df_player_wr, df_player_played, df_bans_map, df_wr_bymap], \
+                    ['map wr', 'map played', 'player wr', 'player played', 'map bans','total map wr'])
 
 # =============================================================================
 
@@ -235,6 +236,10 @@ if plot_results == 'yes':
     plt.xticks(range(len(number_bymap)), list(number_bymap.keys()), rotation=90)
     plt.show()
 
-
+    ## Display stats
+    ## Picks per player. Bars give winrate per hero. Number and color give the number of times played. Red bar is the team global winrate. Suggested bans highlighted with red edges 
     fun.display_team_stats(df_player_wr, df_player_played, team_winrate, max_player=5, team_name=team_shortname)
+    ## Picks per map. Bars give winrate per hero. Number and color give the number of times played. Red bar is the team winrate on this map. Suggested bans highlighted with red edges 
     fun.display_map_stats(df_map_wr, df_map_played, df_wr_bymap, team_name=team_shortname)
+    ## Bans per map. Bars show the number of times banned. Red bar gives average. Suggested bans highlighted with red edges
+    fun.display_map_bans(df_bans_map, team_name=team_shortname)

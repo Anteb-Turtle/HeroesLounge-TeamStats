@@ -6,7 +6,7 @@ Other functions:
 
 import pandas as pd
 from matplotlib import pyplot as plt
-
+import numpy as np
 
 def dict_to_dataframe(dic):
     """Converts data stored in a dictionnary to a pandas dataframe
@@ -31,6 +31,16 @@ def save_to_excel(file_name, list_of_df, list_of_datatypes):
 
     writer.save()
     print('Data saved to: '+file_name+'.xlsx')
+
+
+def open_from_excel(file_name, sheet_names):
+    """Load dataframes from an excel file
+    """
+    df_list=[]
+    for sheet in sheet_names:
+        df_list.append(pd.read_excel(file_name, sheet_name = sheet).set_index('Unnamed: 0'))
+        
+    return df_list
 
 
 def display_indiv_stats(WR_df, Played_df, name='', team_name=''):
@@ -107,10 +117,10 @@ def display_team_stats(WR_df, Played_df, team_wr, max_player=5, team_name=''):
     plt.show()
 
 
-def team_stats_subplot(WR_df, Played_df, threshold, ax, name='', team_name=''):
+def team_stats_subplot(WR_df, Played_df, threshold, ax, name='', team_name='', bans=False):
     """ Subplot for each player
     """
-
+    ## Shaping data for plotting
     WR_df = WR_df.transpose()
     WR_df = WR_df.loc[:, [name]]
     Played_df = Played_df.transpose()
@@ -119,15 +129,30 @@ def team_stats_subplot(WR_df, Played_df, threshold, ax, name='', team_name=''):
     WR_df = WR_df[list(Played_df[name] != 0)]
     Played_df = Played_df[list(Played_df[name] != 0)]
 
-    WR_df[name].plot(ax=ax, kind='bar')
+    ## Highlight suggested bans in red: targets heroes overpicked and overperforming. Margin may be modified to adjust results
+    if bans:
+        edges_color=[ 'red' if ban > Played_df[name].mean()*2  else 'black' for ban in Played_df[name] ]
+        threshold=Played_df[name].mean()
+    else:
+        plm=Played_df[name].mean()
+        wrm=np.average(list(WR_df[name]), weights = (np.asarray(Played_df[name]) / float(sum(Played_df[name]))))
+        margin=1.1
+        edges_color=[ 'red' if Played_df[name][i] > plm*margin and WR_df[name][i] > wrm*margin else 'black' for i in range(0,len(Played_df.index))]
+
+    WR_df[name].plot(ax=ax, kind='bar',color=plt.cm.Blues(Played_df[name]/max(list(Played_df[name]))), edgecolor=edges_color)
     ax.plot([0, len(list(WR_df[name]))], [threshold, threshold], "k--", color='red')
+
+    # add number of picks in text above the bars
     i = 0
     for p in ax.patches:
         ax.annotate(str(list(Played_df[name])[i]), (p.get_x(), p.get_height() * 1.005), fontsize=8, ha='left')
         i += 1
     # add some text for labels, title and axes ticks
     ax.set_ylabel('WR (%)', fontsize=8)
-    ax.set_title(team_name+' winrate by hero: '+name, fontsize=8)
+    if bans:
+        ax.set_title(team_name+' bans for map: '+name, fontsize=8)
+    else:
+        ax.set_title(team_name+' winrate by hero: '+name, fontsize=8)
     ax.set_xticklabels(list(WR_df.index), fontsize=8)
 
 
@@ -140,6 +165,23 @@ def display_map_stats(WR_df, Played_df, threshold_df, team_name=''):
     i = 0
     for maps in list(WR_df.iloc[0:N, :].index):
         team_stats_subplot(WR_df, Played_df, threshold_df.loc[maps, :], ax[i], name=maps, team_name=team_name)
+        i += 1
+
+    plt.tight_layout()
+    plt.show()
+
+
+def display_map_bans (bans_df, team_name=''):
+    """ Displays a bar plot of banned heroes for each map
+    """
+    # TODO: add threshold: number of times the map was played (from main->map_p)
+    N = len(bans_df.index)
+    n_lines = N//3+1
+    fig, ax = plt.subplots(n_lines, 3)
+
+    i = 0
+    for maps in list(bans_df.iloc[0:N, :].index):
+        team_stats_subplot(bans_df, bans_df, 0, ax[i//3, i%3], name=maps, team_name=team_name, bans=True)
         i += 1
 
     plt.tight_layout()
