@@ -19,8 +19,8 @@ import formatdata as fd
 # =============================================================================
 # INPUTS
 # =============================================================================
-team_shortname = 'Turtles' # enter team name abbreviation
-team_longname = 'Turtle Team' # enter full name of the team
+team_shortname = 'Nimemuona' # enter team name abbreviation
+team_longname = 'Nimemuona' # enter full name of the team
 list_of_last_seasons = [0, 1, 2] # list of integers: 0 is current season, 1 is past season, ...
 plot_results = 'yes' # 'yes' to show bar plots of statistics
 save_json = 'yes' # 'yes' to save data gathered to json
@@ -73,7 +73,12 @@ for link in matches_links:
     doc1 = soup(page1, features="html5lib")
     games = doc1.find_all('div', {'class': 'tab-pane'})
     games_id = [i.get('id') for i in games]
-
+    
+    ## In case the match has not been scheduled ##
+    if "The match has not been scheduled yet!" in doc1.text:
+        print('The match has not been scheduled yet')
+        continue
+    ## ##
     ## In case there is a forfeit ##
     if (True in [True for g in games if 'No Replay File found!' in g.text]):
         print(games_id, ' no replay files found')
@@ -223,6 +228,7 @@ if save_excel == 'yes':
 # =============================================================================
 if plot_results == 'yes':
     df_map_played, df_map_wr, df_player_played, df_player_wr = fun.sort_by_most_played(df_map_played, df_map_wr, df_player_played, df_player_wr)
+    plt.rc('font',size=8)
 
     plt.figure()
     plt.suptitle(team_longname+' WR by map')
@@ -238,8 +244,8 @@ if plot_results == 'yes':
 
     ## Display stats
     ## Picks per player. Bars give winrate per hero. Number and color give the number of times played. Red bar is the team global winrate. Suggested bans highlighted with red edges 
-    fun.display_team_stats(df_player_wr, df_player_played, team_winrate, max_player=5, team_name=team_shortname)
+    fun.display_team_stats(df_player_wr, df_player_played, team_winrate, max_player=6, team_name=team_shortname)
     ## Picks per map. Bars give winrate per hero. Number and color give the number of times played. Red bar is the team winrate on this map. Suggested bans highlighted with red edges 
-    fun.display_map_stats(df_map_wr, df_map_played, df_wr_bymap, team_name=team_shortname)
+    fun.display_map_stats(df_map_wr.iloc[0:9,:], df_map_played.iloc[0:9,:], df_wr_bymap, team_name=team_shortname)
     ## Bans per map. Bars show the number of times banned. Red bar gives average. Suggested bans highlighted with red edges
     fun.display_map_bans(df_bans_map, team_name=team_shortname)
