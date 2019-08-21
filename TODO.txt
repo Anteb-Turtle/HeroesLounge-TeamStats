@@ -1,5 +1,6 @@
 #TODO: 
 # WR by player -> computed -> add to threshold?
 # check map highlights
-# uniform display functions for map/player?
-
+# uniform display functions for map/player? + move functions + rename files?
+# FIX json saving => matchs_data
+# Check supportfunction update
