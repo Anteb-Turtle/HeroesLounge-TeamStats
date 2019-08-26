@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-#CLASS VERSION
-# TODO: 
-#  Completer fonctions display
-# Separer rawdata - processeddata - dataframes en plusieurs classes
+""" Classes defninitions
+"""
 
 import json
 import pandas as pd
@@ -13,6 +11,8 @@ import supportfunctions as fun
 import formatdata as fd
 
 class Team():
+    """ This class is just a common init method for the others classes
+    """
     def __init__(self, shortname, longname, list_of_last_seasons=[]):
         self.matchs_list = []
         self.team_shortname = shortname
@@ -20,9 +20,21 @@ class Team():
         self.seasons = list_of_last_seasons
 
 class TeamRawData(Team):
-    def __init__(self, shortname, longname, list_of_last_seasons=[]):
+    """Load and save raw data from heroeslounge.gg
+    Use either gather_online_data() or load_from_json() to create
+    a list of dict containing all data from the selected seasons for the team
+    """
+    def __init__(self, shortname, longname, list_of_last_seasons=[], **kwargs):
         super().__init__(shortname, longname, list_of_last_seasons)
         
+        if 'filename' in kwargs:
+            filename = kwargs.get('filename')
+            self.load_from_json(filename)
+        elif 'gather_online' in kwargs:
+            gather = kwargs.get('gather_online')
+            if gather == True:
+                self.gather_online_data()
+
     def set_seasons(self, seasons_list):
         """ Set the seasons to be searched on heroeslounge.gg
         season_list must be a list of integers
@@ -37,6 +49,12 @@ class TeamRawData(Team):
         """ Append a list of seasons to the current one
         """
         self.seasons.append(seasons_list)
+
+    def set_names(self, shortname, longname):
+        """ Set team tag and team name
+        """
+        self.team_shortname = shortname
+        self.team_longname = longname
 
     def gather_online_data(self, opt_seasons=[]):
         """ Reteives inforamtion from Heroeslounge.gg
@@ -73,9 +91,9 @@ class TeamRawData(Team):
             for div in doc.find_all('div', {'id': id1}):
                 matches_list = div.find_all('a')
             matches_list = matches_list[1::3]
-        
+
             matches_links = matches_links+[str(i.get('href')) for i in matches_list]
-        
+
         print(matches_links)
         print('\n')
 
@@ -90,7 +108,7 @@ class TeamRawData(Team):
             doc1 = soup(page1, features="html5lib")
             games = doc1.find_all('div', {'class': 'tab-pane'})
             games_id = [i.get('id') for i in games]
- 
+
             ## In case the match has not been scheduled ##
             if "The match has not been scheduled yet!" in doc1.text:
                 print('The match has not been scheduled yet')
@@ -148,8 +166,9 @@ class TeamRawData(Team):
             matchs_data.append(match_data)
 
         print('---- All data gathered ----')
-        
+
         self.matchs_list = matchs_data
+        return self
 
 
     def save_to_json(self, opt_filename=None):
@@ -176,6 +195,9 @@ class TeamRawData(Team):
 
 
 class TeamProcessedData(Team):
+    """ Extracts useful data from a TeamRawData object
+    Processed data data is stored in a number of dictionnaries
+    """
     def __init__(self, raw_data):
         super().__init__(raw_data.team_shortname, raw_data.team_longname, raw_data.seasons)
         self.get_formatted_data(raw_data)
@@ -207,9 +229,9 @@ class TeamProcessedData(Team):
         ## caculate wr per hero per player
         self.heroes_played_wr, self.heroes_played_played = fd.get_heroeswr_perplayer(self.players, self.heroes_played)
 #        print('List of heroes and WR for each player in team ', team_longname, ':\n', heroes_played_wr, '\n')
-        
+
         # =============================================================================
-        ## Heroes played by map and WR        
+        ## Heroes played by map and WR
         ## get heroes played per map
         self.heroes_map, self.bans_map = fd.get_heroesplayed_maps(self.map_list, self.map_uni, self.picks, self.results, self.bans)
         ## caculate wr per hero per map
@@ -219,16 +241,15 @@ class TeamProcessedData(Team):
 #        list_of_dicts = [self.heroes_played_wr, self.heroes_played_played, self.heroes_map_wr, self.heroes_map_played, self.winrate_bymap, self.map_bans]
         return self
 
-def test (**kwargs):
-    
-    if 'a' in kwargs:
-        print('ok')
-    else:
-        print('nada')
-    
-
 class TeamDisplayData(Team):
-    def __init__(self,**kwargs):
+    """ Convert dictionaries from a TeamProcessedData object to dataframes and
+    plots them. Displays the differents stats for players/maps.
+    Dataframes can be loaded from:
+        - raw data from TeamRawData object
+        - Processed data from TeamProcessedData objetc
+        - loaded from excel file
+    """
+    def __init__(self, **kwargs):
         #processed_data
         #raw_data
         #filename + team_winrate
@@ -240,6 +261,9 @@ class TeamDisplayData(Team):
         elif 'raw_data' in kwargs:
             raw_data = kwargs.get('raw_data')
             super().__init__(raw_data.team_shortname, raw_data.team_longname, raw_data.seasons)
+            if not raw_data.matchs_list:
+                print('Raw data is empty. Trying to retreive online data.')
+                raw_data.gather_online_data()
             processed = TeamProcessedData(raw_data)
             self.team_winrate = processed.team_winrate
             self.get_dataframes(processed)
@@ -256,8 +280,8 @@ class TeamDisplayData(Team):
             print('Empty TeamDisplayData')
             super().__init__('', '')
             self.winrate = None
-        
-    def get_dataframes(self,processed_data):
+
+    def get_dataframes(self, processed_data):
         """Converts dicts to dataframes
         """
         self.df_player_wr = fun.dict_to_dataframe(processed_data.heroes_played_wr)
@@ -266,9 +290,9 @@ class TeamDisplayData(Team):
         self.df_map_played = fun.dict_to_dataframe(processed_data.heroes_map_played)
         self.df_wr_bymap = pd.DataFrame.from_dict(processed_data.winrate_bymap, orient='index', columns=['WR'])
         self.df_bans_map = fun.dict_to_dataframe(processed_data.map_bans)
-        
+
         return self
-    
+
     def save_to_excel(self, opt_filename=None):
         """Save all dataframes to an excel file
         Filename is opt_filename if used, else defaults to team_shortname
@@ -277,10 +301,10 @@ class TeamDisplayData(Team):
             name = self.team_shortname+'.xlsx'
         else:
             name = opt_filename
-        
+
         try:
             df_list = [self.df_player_wr, self.df_player_played, self.df_map_wr, self.df_map_played, self.df_wr_bymap, self.df_bans_map]
-            list_of_datatypes = ['map wr', 'map played', 'player wr', 'player played', 'map bans','total map wr']
+            list_of_datatypes = ['map wr', 'map played', 'player wr', 'player played', 'map bans', 'total map wr']
         except AttributeError:
             print('No dataframes found.\n Method get_dataframes should be used before calling save_to_excel')
             return
@@ -291,16 +315,16 @@ class TeamDisplayData(Team):
             # Convert the dataframe to an XlsxWriter Excel object
             df.to_excel(writer, sheet_name=list_of_datatypes[i])
             i += 1
-    
+
         writer.save()
         print('Data saved to: '+name)
 
     def load_from_excel(self, filename):
         """ Load the dataframes used for statistics visualization
         """
-        df_list=[]
-        for sheet in ['map wr', 'map played', 'player wr', 'player played', 'map bans','total map wr']:
-            df_list.append(pd.read_excel(filename, sheet_name = sheet).set_index('Unnamed: 0'))
+        df_list = []
+        for sheet in ['map wr', 'map played', 'player wr', 'player played', 'map bans', 'total map wr']:
+            df_list.append(pd.read_excel(filename, sheet_name=sheet).set_index('Unnamed: 0'))
 
         self.df_player_wr = df_list[0]
         self.df_player_played = df_list[1]
@@ -313,7 +337,8 @@ class TeamDisplayData(Team):
 
     def display_player_stats(self, players):
         """ Plots the winrate for a number of players from the team
-        - if player is an integer: displays the stats for the first "players" players in the team (sorted by number of matches played)
+        - if player is an integer: displays the stats for the first "players" players in the team
+        (sorted by number of matches played)
         - if player is a list of strings: displays the stats for each player in the list
         """
         plt.rc('font',size=8)
@@ -327,8 +352,8 @@ class TeamDisplayData(Team):
                 else:
                     fun.team_stats_subplot(self.df_player_wr, self.df_player_played, self.team_winrate, ax[i], name=player, team_name=self.team_shortname)
                 i += 1
-        
-        elif isinstance(players,list): # displays the stats for the given list of players
+
+        elif isinstance(players, list): # displays the stats for the given list of players
             n_lines = (len(players)-1)//3+1
             fig, ax = plt.subplots(n_lines, 3)
             i = 0
@@ -346,13 +371,76 @@ class TeamDisplayData(Team):
         plt.tight_layout()
         plt.show()
 
-#    def display_map_stats(self):
-#        
-#        
-#    def display_map_bans(self):
-#        
-#        
-#    def display_map_played(self):
-#        
-#    
+    def display_map_bans(self, bans=None):
+        """ Displays a bar plot of banned heroes for each map
+        """
+        if bans is None:
+            N = len(self.df_bans_map.index)
+            n_lines = N//3+1
+            fig, ax = plt.subplots(n_lines, 3)
 
+            i = 0
+            for maps in list(self.df_bans_map.iloc[0:N, :].index):
+                fun.team_stats_subplot(self.df_bans_map, self.df_bans_map, 0, ax[i//3, i%3], name=maps, team_name=self.team_shortname, bans=True)
+                i += 1
+        elif isinstance(bans, int):
+            n_lines = (bans-1)//3+1
+            fig, ax = plt.subplots(n_lines, 3)
+            i = 0
+            for mapp in list(self.df_bans_map.iloc[0:bans, :].index):
+                if n_lines > 1:
+                    fun.team_stats_subplot(self.df_bans_map, self.df_bans_map, 0, ax[i//3, i%3], name=mapp, team_name=self.team_shortname, bans=True)
+                else:
+                    fun.team_stats_subplot(self.df_bans_map, self.df_bans_map, 0, ax[i], name=mapp, team_name=self.team_shortname, bans=True)
+                i += 1
+        elif isinstance(bans, list):
+            n_lines = (len(bans)-1)//3+1
+            fig, ax = plt.subplots(n_lines, 3)
+            i = 0
+            for mapp in bans:
+                if n_lines > 1:
+                    fun.team_stats_subplot(self.df_bans_map, self.df_bans_map, 0, ax[i//3, i%3], name=mapp, team_name=self.team_shortname, bans=True)
+                else:
+                    fun.team_stats_subplot(self.df_bans_map, self.df_bans_map, 0, ax[i], name=mapp, team_name=self.team_shortname, bans=True)
+                i += 1
+        else:
+            print('Variable bans: wrong type')
+        plt.tight_layout()
+        plt.show()
+
+    def display_map_stats(self, maps=None):
+        """ Displays a bar plot of heroes WR and number played for a player or a map
+        """
+        if maps is None:
+            N = len(self.df_map_wr.index)
+            ax = [None]*9
+            fig, ((ax[0], ax[1], ax[2]), (ax[3], ax[4], ax[5]), (ax[6], ax[7], ax[8])) = plt.subplots(3, 3)
+            i = 0
+            for mapp in list(self.df_map_wr.iloc[0:N, :].index):
+                fun.team_stats_subplot(self.df_map_wr, self.df_map_played, self.df_wr_bymap.loc[mapp, :], ax[i], name=mapp, team_name=self.team_shortname)
+                i += 1
+        elif isinstance(maps, int):
+            n_lines = (maps-1)//3+1
+            fig, ax = plt.subplots(n_lines, 3)
+            i = 0
+            for mapp in list(self.df_map_wr.iloc[0:maps, :].index):
+                if n_lines > 1:
+                    fun.team_stats_subplot(self.df_map_wr, self.df_map_played, self.df_wr_bymap.loc[mapp, :], ax[i//3, i%3], name=mapp, team_name=self.team_shortname)
+                else:
+                    fun.team_stats_subplot(self.df_map_wr, self.df_map_played, self.df_wr_bymap.loc[mapp, :], ax[i], name=mapp, team_name=self.team_shortname)
+                i += 1
+        elif isinstance(maps, list):
+            n_lines = (len(maps)-1)//3+1
+            fig, ax = plt.subplots(n_lines, 3)
+            i = 0
+            for mapp in maps:
+                if n_lines > 1:
+                    fun.team_stats_subplot(self.df_map_wr, self.df_map_played, self.df_wr_bymap.loc[mapp, :], ax[i//3, i%3], name=mapp, team_name=self.team_shortname)
+                else:
+                    fun.team_stats_subplot(self.df_map_wr, self.df_map_played, self.df_wr_bymap.loc[mapp, :], ax[i], name=mapp, team_name=self.team_shortname)
+                i += 1
+        else:
+            print('Variable maps: wrong type')
+
+        plt.tight_layout()
+        plt.show() 
