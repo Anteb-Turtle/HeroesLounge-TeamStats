@@ -63,7 +63,7 @@ class TeamRawData(Team):
         """ Reteives inforamtion from Heroeslounge.gg
         Computes the matchs_list dict containing all raw datas from the team
         """
-        if not (self.seasons and opt_seasons):
+        if not (self.seasons or opt_seasons):
             print('Please specify the seasons your are interested in')
             print('Trying with current season')
             list_of_last_seasons = [0]
@@ -314,6 +314,8 @@ class TeamDisplayData(Team):
         self.df_map_played = fun.dict_to_dataframe(processed_data.heroes_map_played)
         self.df_wr_bymap = pd.DataFrame.from_dict(processed_data.winrate_bymap, orient='index', columns=['WR'])
         self.df_bans_map = fun.dict_to_dataframe(processed_data.map_bans)
+        self.df_map_played, self.df_map_wr, self.df_player_played, self.df_player_wr = fun.sort_by_most_played(self.df_map_played, self.df_map_wr, self.df_player_played, self.df_player_wr)
+
 
         return self
 
