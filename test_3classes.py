@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup as soup
 from matplotlib import pyplot as plt
 import supportfunctions as fun
 import formatdata as fd
+import datetime as dt
 
 class Team():
     """ This class is just a common init method for the others classes
@@ -37,10 +38,12 @@ class TeamRawData(Team):
 
     def set_seasons(self, seasons_list):
         """ Set the seasons to be searched on heroeslounge.gg
-        season_list must be a list of integers
-        0 is current season
-        1 is last season
-        2 is the season before last season ...
+        season_list can be a list of integers or a list of strings
+        list of integers:
+            0 is current season
+            1 is last season
+            2 is the season before last season ...
+        list of strings: enter the complete name of each season
         Warning: playoffs and aram cups count as seasons
         """
         self.seasons = seasons_list
@@ -62,7 +65,8 @@ class TeamRawData(Team):
         """
         if not (self.seasons and opt_seasons):
             print('Please specify the seasons your are interested in')
-            return None
+            print('Trying with current season')
+            list_of_last_seasons = [0]
         if not opt_seasons:
             list_of_last_seasons = self.seasons
         else:
@@ -82,8 +86,19 @@ class TeamRawData(Team):
         ids = [i for i in id_list if 'roundmatches' in str(i)]
         ## Filter by season
         ids = ids[1:]
-        ids = [ids[i] for i in list_of_last_seasons]
 
+        test=doc.find('div',{'id':'roundmatches_groups'})
+        ids = [a.get('href')[1:] for a in test.find_all('a')]
+        if all(isinstance(season,int) for season in list_of_last_seasons): # filter using list of strings
+             ids = [ids[i] for i in list_of_last_seasons]
+        elif all(isinstance(season,str) for season in list_of_last_seasons): # filter using the names of the seasons
+             names = [li.text.rstrip().lstrip() for li in test.find_all('li')]
+             names = [names.index(name) for name in names if name in list_of_last_seasons]
+             ids = [ids[i] for i in names]
+        else:
+             raise AttributeError('list_of_last_seasons wrong type')
+
+        
         # =============================================================================
         ## Find all matches links in filtered seasons
         matches_links = []
@@ -112,6 +127,15 @@ class TeamRawData(Team):
             ## In case the match has not been scheduled ##
             if "The match has not been scheduled yet!" in doc1.text:
                 print('The match has not been scheduled yet')
+                continue
+            ## ##
+            ## In case the match is scheduled in the future##
+            time = doc1.find('div', {'id': 'matchtime'})
+            time = time.find('h3').text
+            time = '-'.join(str(time).split()[2:])
+            time = dt.datetime.strptime(time,"%d-%b-%Y-%H:%M")
+            if time > dt.datetime.now() :
+                print('The match has not been played yet')
                 continue
             ## ##
             ## In case there is a forfeit ##

@@ -9,7 +9,7 @@ import test_3classes as tc
 # =============================================================================
 # INPUTS
 # =============================================================================
-team_name = 'Turtle team' # enter team complete name
+team_name = 'Turtle Team' # enter team complete name
 team_tag =  'Turtles' # enter team tag
 seasons = [0,1,2] # enter a list of integers: 0 is current season, 1 is past season, ...
 # =============================================================================
