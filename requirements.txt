@@ -3,5 +3,4 @@ numpy
 matplotlib
 requests
 bs4
-json
 datetime
