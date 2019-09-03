@@ -171,5 +171,5 @@ def get_heroeswr_permap(maps, heroes_map, bans_map={}):
         heroes_map_wr[mp] = {uni[key]:[w[i]/p[i]*100 for i in range(0, len(uni))][key] for key in range(0, len(uni))}
         heroes_map_played[mp] = {uni[key]:p[key] for key in range(0, len(uni))}
         map_bans[mp] = {uni_ban[key]:b[key] for key in range(0, len(uni_ban))}
-        
+
     return heroes_map_wr, heroes_map_played, map_bans
