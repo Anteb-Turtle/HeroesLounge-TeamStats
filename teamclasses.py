@@ -189,7 +189,7 @@ class TeamRawData(Team):
             time = '-'.join(str(time).split()[2:])
             try: 
                 time = dt.datetime.strptime(time,"%d-%b-%Y-%H:%M")
-                if time > dt.datetime.now() :
+                if dt.datetime.now() < (time + dt.timedelta(hours=2)):
                     print('The match has not been played yet')
                     continue
             except ValueError:
