@@ -557,3 +557,118 @@ class TeamDisplayData(Team):
             ax.set_title(self.team_shortname+' winrate by hero: '+name, fontsize=8)
             ax.set_ylabel('WR (%)', fontsize=8)
         ax.set_xticklabels(list(WR_df.index), fontsize=8)
+        
+        def display_scatter_maps(self, size=14, s=100):
+            """
+                Scatter plot of maps by number of times played and winrate
+            """
+            # Scatter
+            played = np.array(self.df_map_played.sort_index().sum(axis=1) / 5)
+            winrate = np.array(self.df_wr_bymap.sort_index()).flatten()
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.scatter(played, winrate, color='b', marker='o', s=s)
+            
+            # Check for overlapping labels
+            pts_iter = zip(played, winrate)
+            seen = []
+            duplicates=[]       
+            for i, it in enumerate(pts_iter):
+                if it not in seen:
+                    seen.append(it)
+                else:
+                    duplicates.append(i)
+            pts_iter = zip(played, winrate)
+            
+            # Add labels to plot
+            for i, (x, y) in enumerate(pts_iter):
+                if x > np.average(played) and y > np.average(winrate):
+                    ax.scatter(x, y, marker='o', color='b', s=s, edgecolor='red', linewidth=2)
+                if duplicates.count(i) == 1:
+                    ax.annotate(np.array((self.df_wr_bymap.sort_index().index))[i], (x,y),horizontalalignment='right', verticalalignment='top', size=size)
+                elif duplicates.count(i) == 2:
+                    ax.annotate(np.array((self.df_wr_bymap.sort_index().index))[i], (x,y),horizontalalignment='left', verticalalignment='top', size=size)
+                elif duplicates.count(i) == 3:
+                    ax.annotate(np.array((self.df_wr_bymap.sort_index().index))[i], (x,y),horizontalalignment='left', verticalalignment='bottom', size=size)
+                else:
+                    ax.annotate(np.array((self.df_wr_bymap.sort_index().index))[i], (x,y),horizontalalignment='right', verticalalignment='bottom', size=size)
+            
+            # Add average winrate
+            ax.plot([0, max(played)], [self.team_winrate, self.team_winrate], "k--", color='red')
+            ax.annotate('Average winrate '+ str(round(self.team_winrate,1)) + ' %', (0, self.team_winrate), horizontalalignment='left', verticalalignment='bottom', size=size, color='red')
+            
+            # Prettier plot
+            ax.set_title(self.team_shortname+' map priority', fontsize=16)
+            ax.set_ylabel('WR (%)', fontsize=size)
+            ax.set_xlabel('Numebr of rounds', fontsize=size)
+            ax.set_xticks(range(0,int(round(max(played)))+1))
+            ax.set_xticklabels(range(0,int(round(max(played)))+1), fontsize=size)
+            ax.set_yticks([0, 20, 40,  60, 80, 100])
+            ax.set_yticklabels([0, 20, 40, 60, 80, 100], fontsize=size)
+            plt.draw()
+               
+        def display_scatter_heroes(self, player=None):
+            if player is None:
+                winrate = self.df_player_wr * self.df_player_played
+                winrate = winrate.sum(axis=0)
+                played = np.array(self.df_player_played.sum(axis=0))
+                winrate = winrate / played
+                player = self.team_shortname
+                
+            elif player in self.df_player_played.index:
+                winrate = self.df_player_wr.loc[player]
+                played = np.array(self.df_player_played.loc[player])
+                winrate = winrate[[list(played != 0)]]
+                played = played[[list(played != 0)]]
+                
+            else:
+                raise ValueError("player not recognized")
+                
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.scatter(played, winrate, color='b', marker='o', s=100)
+            
+            # Check for overlapping labels
+            pts_iter = zip(played, winrate)
+            seen = []
+            duplicates=[]       
+            for i, it in enumerate(pts_iter):
+                if it not in seen:
+                    seen.append(it)
+                else:
+                    duplicates.append(i)
+            pts_iter = zip(played, winrate)
+
+            # Add labels to plot
+            pts_iter = zip(played, winrate)
+            for i, (x, y) in enumerate(pts_iter):
+                if x > np.average(played) and y > np.average(winrate):
+                    ax.scatter(x, y, marker='o', color='b', s=s, edgecolor='red', linewidth=2)
+                if duplicates.count(i) == 1:
+                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='right', verticalalignment='top', size=size)
+                elif duplicates.count(i) == 2:
+                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='left', verticalalignment='top', size=size)
+                elif duplicates.count(i) == 3:
+                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='left', verticalalignment='bottom', size=size)
+                else:
+                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='right', verticalalignment='bottom', size=size)
+            
+            # Add average winrate
+            if player in self.df_player_played.index:
+                ax.plot([0, max(played)], [self.team_winrate, self.team_winrate], "k--", color='red')
+                ax.annotate('Average winrate '+ str(round(self.team_winrate,1)) + ' %', (0, self.team_winrate), horizontalalignment='left', verticalalignment='bottom', size=size, color='red')
+            else:
+                player_wr = np.average(np.array(winrate), weights=(np.asarray(played) / float(sum(played))))
+                ax.plot([0, max(played)], [player_wr, player_wr], "k--", color='red')
+                ax.annotate('Average winrate '+ player_wr + ' %', (0, self.team_winrate), horizontalalignment='left', verticalalignment='bottom', size=size, color='red')
+            
+            # Prettier plot
+            ax.set_title(player + ' pick priority', fontsize=16)
+            ax.set_ylabel('WR (%)', fontsize=size)
+            ax.set_xlabel('Numebr of rounds', fontsize=size)
+            ax.set_xticks(range(0,int(round(max(played)))+1))
+            ax.set_xticklabels(range(0,int(round(max(played)))+1), fontsize=size)
+            ax.set_yticks([0, 20, 40,  60, 80, 100])
+            ax.set_yticklabels([0, 20, 40, 60, 80, 100], fontsize=size)
+            plt.draw()
+        
