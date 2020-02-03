@@ -69,6 +69,7 @@ class TeamRawData(Team):
         print('Requesting team html')
         url = "https://heroeslounge.gg/team/view/" + self.team_shortname
         result = requests.get(url)
+        result.raise_for_status()
         page = result.text
         doc = soup(page, features="html5lib")
         print('Request completed')
@@ -80,6 +81,7 @@ class TeamRawData(Team):
         """
         print('Requesting link:', link)
         result = requests.get(link)
+        result.raise_for_status()
         print('Request completed')
         page = result.text
         doc = soup(page, features="html5lib")
