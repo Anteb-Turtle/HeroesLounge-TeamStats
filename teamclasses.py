@@ -634,27 +634,34 @@ class TeamDisplayData(Team):
         # Check for overlapping labels
         pts_iter = zip(played, winrate)
         seen = []
-        duplicates=[]       
-        for i, it in enumerate(pts_iter):
-            if it not in seen:
-                seen.append(it)
-            else:
-                duplicates.append(i)
-        pts_iter = zip(played, winrate)
-
-        # Add labels to plot
-        pts_iter = zip(played, winrate)
         for i, (x, y) in enumerate(pts_iter):
-            if x > np.average(played) and y > np.average(winrate):
-                ax.scatter(x, y, marker='o', color='b', s=s, edgecolor='red', linewidth=2)
-            if duplicates.count(i) == 1:
-                ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='right', verticalalignment='top', size=size)
-            elif duplicates.count(i) == 2:
-                ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='left', verticalalignment='top', size=size)
-            elif duplicates.count(i) == 3:
-                ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='left', verticalalignment='bottom', size=size)
+            if (x, y) in seen:
+                if seen.count((x, y)) %8 == 1:
+                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='right', verticalalignment='top', size=size)
+                elif seen.count((x, y)) %8 == 2:
+                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='left', verticalalignment='top', size=size)
+                elif seen.count((x, y)) %8 == 3:
+                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='left', verticalalignment='bottom', size=size)
+                elif seen.count((x, y)) %8 == 4:
+                    ax.annotate(np.array(winrate.index)[i], (x,y), xytext=(0,-size),
+                                textcoords='offset points',horizontalalignment='right', verticalalignment='top', size=size)
+                elif seen.count((x, y)) %8 == 5:
+                    ax.annotate(np.array(winrate.index)[i], (x,y), xytext=(0,-size),
+                                textcoords='offset points', horizontalalignment='left', verticalalignment='top', size=size)
+                elif seen.count((x, y)) %8 == 6:
+                    ax.annotate(np.array(winrate.index)[i], (x,y), xytext=(0,size),
+                                textcoords='offset points', horizontalalignment='right', verticalalignment='bottom', size=size)
+                elif seen.count((x, y)) %8 == 7:
+                    ax.annotate(np.array(winrate.index)[i], (x,y), xytext=(0,size),
+                                textcoords='offset points', horizontalalignment='left', verticalalignment='bottom', size=size)
+                else:
+                    ax.annotate(np.array(winrate.index)[i], (x,y), horizontalalignment='right', verticalalignment='bottom', size=size)
             else:
                 ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='right', verticalalignment='bottom', size=size)
+            seen.append((x, y))
+            if x > np.average(played) and y > np.average(winrate):
+                ax.scatter(x, y, marker='o', color='b', s=s, edgecolor='red', linewidth=2)
+            
         
         # Add average winrate
         if player in self.df_player_played.index:
@@ -663,7 +670,7 @@ class TeamDisplayData(Team):
         else:
             player_wr = np.average(np.array(winrate), weights=(np.asarray(played) / float(sum(played))))
             ax.plot([0, max(played)], [player_wr, player_wr], "k--", color='red')
-            ax.annotate('Average winrate '+ player_wr + ' %', (0, self.team_winrate), horizontalalignment='left', verticalalignment='bottom', size=size, color='red')
+            ax.annotate(f'Average winrate {round(player_wr,1)} %', (0, self.team_winrate), horizontalalignment='left', verticalalignment='bottom', size=size, color='red')
         
         # Prettier plot
         ax.set_title(player + ' pick priority', fontsize=16)
