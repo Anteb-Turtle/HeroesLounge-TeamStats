@@ -8,8 +8,8 @@ disp = pd.merge(pd.merge(disp1,disp2, how='outer'),disp3, how='outer')
 disp = disp.fillna(0)
 disp.groupby(by=['index','hero'], as_index=False).sum()
 disp['ocurence'] = disp['played'] + disp['banned']
-
+disp = disp[disp.played != 0]
 
 #plotting
-fig = px.scatter(disp, x='hero', y='index', size='WR', color='ocurence')
+fig = px.scatter(disp, x='hero', y='index', size='ocurence', color='WR')
 fig.show()
