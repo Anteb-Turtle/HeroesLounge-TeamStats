@@ -13,3 +13,15 @@ disp = disp[disp.played != 0]
 #plotting
 fig = px.scatter(disp, x='hero', y='index', size='ocurence', color='WR')
 fig.show()
+
+
+disp1 = pd.melt(team_display.df_player_wr.reset_index(), id_vars=['index'], var_name='hero', value_name='WR')
+disp2 = pd.melt(team_display.df_player_played.reset_index(), id_vars=['index'], var_name='hero', value_name='played')
+disp = pd.merge(disp1,disp2, how='outer')
+disp = disp.fillna(0)
+#disp.groupby(by=['index','hero'], as_index=False).sum()
+#disp = disp[disp.played != 0]
+
+#plotting
+fig = px.scatter(disp, x='hero', y='index', size='played', color='WR')
+fig.show()
