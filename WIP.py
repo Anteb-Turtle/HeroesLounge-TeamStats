@@ -50,6 +50,7 @@ for ind in range(1, len(tidy_players.index)):
     
  
 fig = px.scatter(tidy_players, x='played', y='WR', color='WR', size='played')
+
 for index, row in tidy_players.iterrows():
     fig.add_annotation(dict(font=dict(size=12),
                     x=row['played'],
@@ -60,4 +61,12 @@ for index, row in tidy_players.iterrows():
                     yshift=shift[row['shift']][1],
                     xref="x",
                     yref="y"))
+fig.update_layout(shapes=[
+    dict(
+      type= 'line',
+      line = dict(color='grey', width=1, dash='dash'),
+      yref= 'y', y0= team_display.team_winrate, y1= team_display.team_winrate,
+      xref= 'x', x0= 0, x1= max(tidy_players.played+1)
+    )
+])
 fig.show()
