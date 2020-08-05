@@ -70,3 +70,45 @@ fig.update_layout(shapes=[
     )
 ])
 fig.show()
+
+
+tidy_maps = team_display.df_wr_bymap
+tidy_maps = pd.concat([tidy_maps, team_display.df_map_played.sum(axis=1)/5], axis=1)
+tidy_maps.columns = ['WR', 'played']
+tidy_maps.reset_index(inplace=True)
+
+# Shifting annotations
+shift = [(0,12), (0,-10), (30,0),(-35,0),(-40,12)]
+tidy_maps = tidy_maps.sort_values(by=['WR','played'])
+tidy_maps['shift'] = [0]*len(tidy_maps.index)
+for ind in range(1, len(tidy_maps.index)):
+    if np.all(np.array(tidy_maps.iloc[ind,1:4]) == np.array(tidy_maps.iloc[ind-1,1:4])):
+        tidy_maps.iloc[ind,3] += 1
+    elif np.all(np.array(tidy_maps.iloc[ind,1:4]) == np.array(tidy_maps.iloc[ind-2,1:4])):
+        tidy_maps.iloc[ind,3] += 2
+    elif np.all(np.array(tidy_maps.iloc[ind,1:4]) == np.array(tidy_maps.iloc[ind-3,1:4])):
+        tidy_maps.iloc[ind,3] += 3
+    elif np.all(np.array(tidy_maps.iloc[ind,1:4]) == np.array(tidy_maps.iloc[ind-4,1:4])):
+        tidy_maps.iloc[ind,3] += 4
+        
+fig = px.scatter(tidy_maps, x='played', y='WR', color='WR', size='played')
+
+for index, row in tidy_maps.iterrows():
+    fig.add_annotation(dict(font=dict(size=12),
+                    x=row['played'],
+                    y=row['WR'],
+                    showarrow=False,
+                    text=row['index'],
+                    xshift=shift[row['shift']][0],
+                    yshift=shift[row['shift']][1],
+                    xref="x",
+                    yref="y"))
+fig.update_layout(shapes=[
+    dict(
+      type= 'line',
+      line = dict(color='grey', width=1, dash='dash'),
+      yref= 'y', y0= team_display.team_winrate, y1= team_display.team_winrate,
+      xref= 'x', x0= 0, x1= max(tidy_maps.played+1)
+    )
+])
+fig.show()
