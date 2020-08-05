@@ -25,3 +25,13 @@ disp = disp.fillna(0)
 #plotting
 fig = px.scatter(disp, x='hero', y='index', size='played', color='WR')
 fig.show()
+
+
+tidy_players = (team_display.df_player_wr * team_display.df_player_played).sum(axis=0)
+tidy_players = pd.concat([tidy_players, team_display.df_player_played.sum(axis=0)], axis=1)
+tidy_players.columns = ['WR', 'played']
+tidy_players['WR'] = tidy_players['WR'] / tidy_players['played']
+tidy_players.reset_index(inplace=True)
+
+fig = px.scatter(tidy_players, x='played', y='WR', text='index')
+fig.show()
