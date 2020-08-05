@@ -33,5 +33,23 @@ tidy_players.columns = ['WR', 'played']
 tidy_players['WR'] = tidy_players['WR'] / tidy_players['played']
 tidy_players.reset_index(inplace=True)
 
-fig = px.scatter(tidy_players, x='played', y='WR', text='index')
+# Shifting annotations
+shift = [(0,0), (5,0),(-5,0),(0,5),(0,-5)]
+tidy_players = tidy_players.sort_values(by=['WR','played'])
+tidy_players['shift'] = [shift[0]]*len(tidy_players.index)
+for ind in range(1, len(tidy_players.index)+1):
+    if tidy_players.iloc[ind,1:4] == tidy_players.iloc[ind-1,1:4]
+    
+ 
+fig = px.scatter(tidy_players, x='played', y='WR', color='WR', size='played')
+for index, row in tidy_players.iterrows():
+    fig.add_annotation(dict(x=row['played'],
+                   y=row['WR'],
+                   showarrow=False,
+                   text=row['index'],
+                    yanchor='bottom',
+                   xshift=,
+                    yshift=,
+                   xref="x",
+                   yref="y"))
 fig.show()
