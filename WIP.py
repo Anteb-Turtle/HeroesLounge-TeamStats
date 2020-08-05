@@ -26,6 +26,7 @@ disp = disp.fillna(0)
 fig = px.scatter(disp, x='hero', y='index', size='played', color='WR')
 fig.show()
 
+import numpy as np
 
 tidy_players = (team_display.df_player_wr * team_display.df_player_played).sum(axis=0)
 tidy_players = pd.concat([tidy_players, team_display.df_player_played.sum(axis=0)], axis=1)
@@ -34,22 +35,29 @@ tidy_players['WR'] = tidy_players['WR'] / tidy_players['played']
 tidy_players.reset_index(inplace=True)
 
 # Shifting annotations
-shift = [(0,0), (5,0),(-5,0),(0,5),(0,-5)]
+shift = [(0,12), (0,-10), (30,0),(-35,0),(-40,12)]
 tidy_players = tidy_players.sort_values(by=['WR','played'])
-tidy_players['shift'] = [shift[0]]*len(tidy_players.index)
-for ind in range(1, len(tidy_players.index)+1):
-    if tidy_players.iloc[ind,1:4] == tidy_players.iloc[ind-1,1:4]
+tidy_players['shift'] = [0]*len(tidy_players.index)
+for ind in range(1, len(tidy_players.index)):
+    if np.all(np.array(tidy_players.iloc[ind,1:4]) == np.array(tidy_players.iloc[ind-1,1:4])):
+        tidy_players.iloc[ind,3] += 1
+    elif np.all(np.array(tidy_players.iloc[ind,1:4]) == np.array(tidy_players.iloc[ind-2,1:4])):
+        tidy_players.iloc[ind,3] += 2
+    elif np.all(np.array(tidy_players.iloc[ind,1:4]) == np.array(tidy_players.iloc[ind-3,1:4])):
+        tidy_players.iloc[ind,3] += 3
+    elif np.all(np.array(tidy_players.iloc[ind,1:4]) == np.array(tidy_players.iloc[ind-4,1:4])):
+        tidy_players.iloc[ind,3] += 4
     
  
 fig = px.scatter(tidy_players, x='played', y='WR', color='WR', size='played')
 for index, row in tidy_players.iterrows():
-    fig.add_annotation(dict(x=row['played'],
-                   y=row['WR'],
-                   showarrow=False,
-                   text=row['index'],
-                    yanchor='bottom',
-                   xshift=,
-                    yshift=,
-                   xref="x",
-                   yref="y"))
+    fig.add_annotation(dict(font=dict(size=12),
+                    x=row['played'],
+                    y=row['WR'],
+                    showarrow=False,
+                    text=row['index'],
+                    xshift=shift[row['shift']][0],
+                    yshift=shift[row['shift']][1],
+                    xref="x",
+                    yref="y"))
 fig.show()
