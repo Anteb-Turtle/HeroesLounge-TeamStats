@@ -6,3 +6,4 @@ bs4
 datetime
 html5lib
 plotly
+voila
