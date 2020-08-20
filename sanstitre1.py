@@ -32,6 +32,7 @@ class TeamWidget():
         ## Called only when the button is pressed
         team_data = tc.TeamRawData(self.team_tag.value, self.team_name.value)
         team_data.set_seasons(list(self.seasons.value))
+        print(team_data.seasons)
         ## Import data
         team_data.gather_online_data()
         ## Process data: convert to dataframes
