@@ -100,6 +100,8 @@ class TeamRawData(Team):
 
         test = doc.find('div', {'id':'roundmatches_groups'})
         ids = [a.get('href')[1:] for a in test.find_all('a')]
+        print(ids)
+        print(list_of_last_seasons)
         ## filter using list of strings
         if all(isinstance(season,int) for season in list_of_last_seasons):
             ids = [ids[i] for i in list_of_last_seasons]
