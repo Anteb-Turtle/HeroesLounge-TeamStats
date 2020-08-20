@@ -25,11 +25,11 @@ class TeamWidget():
                                         description='seasons',
                                         disabled=False)
         button = widgets.Button(description="Submit and run")
-        button.on_click(self.submit_input())
+        button.on_click(self.submit_input)
         display(self.team_tag, self.team_name, self.seasons, button)
         print('display')
         
-    def submit_input(self):
+    def submit_input(self, *args):
         print('click')
         team_data = tc.TeamRawData(self.team_tag, self.team_name)
         team_data.set_seasons(self.seasons)
