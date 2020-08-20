@@ -16,10 +16,10 @@ import matplotlib.pyplot as plt
 
 class TeamWidget():
     
-    def __init__(self, tag = 'TT', name='Turtle Team', n = [0]):
+    def __init__(self, tag = 'Turtles', name='Turtle Team', n = [0]):
         ## Set the widgets and display them
-        self.team_tag = widgets.Text(tag)
-        self.team_name = widgets.Text(name)
+        self.team_tag = widgets.Text(tag, description='Team tag:')
+        self.team_name = widgets.Text(name, description='Team name:')
         self.seasons = widgets.SelectMultiple(options=[0,1,2,3,4,5,6,7,8,9],
                                         value= n,
                                         description='seasons',
@@ -32,7 +32,6 @@ class TeamWidget():
         ## Called only when the button is pressed
         team_data = tc.TeamRawData(self.team_tag.value, self.team_name.value)
         team_data.set_seasons(list(self.seasons.value))
-        print(team_data.seasons)
         ## Import data
         team_data.gather_online_data()
         ## Process data: convert to dataframes
