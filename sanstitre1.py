@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 class TeamWidget():
     
     def __init__(self, tag = 'TT', name='Turtle Team', n = [0]):
-        print('init')
+        ## Set the widgets and display them
         self.team_tag = widgets.Text(tag)
         self.team_name = widgets.Text(name)
         self.seasons = widgets.SelectMultiple(options=[0,1,2,3,4,5,6,7,8,9],
@@ -27,12 +27,11 @@ class TeamWidget():
         button = widgets.Button(description="Submit and run")
         button.on_click(self.submit_input)
         display(self.team_tag, self.team_name, self.seasons, button)
-        print('display')
         
     def submit_input(self, *args):
-        print('click')
-        team_data = tc.TeamRawData(self.team_tag, self.team_name)
-        team_data.set_seasons(self.seasons)
+        ## Called only when the button is pressed
+        team_data = tc.TeamRawData(self.team_tag.value, self.team_name.value)
+        team_data.set_seasons(self.seasons.value)
         ## Import data
         team_data.gather_online_data()
         ## Process data: convert to dataframes
