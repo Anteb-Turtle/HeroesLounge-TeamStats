@@ -28,7 +28,7 @@ class TeamWidget(tc.TeamRawData):
         
         self.out1, self.out2, self.out3, self.out4 = widgets.Output(), widgets.Output(), widgets.Output(), widgets.Output()
         
-        buttonlabel = widgets.HBox([self.label, button0])
+        buttonlabel = widgets.HBox([self.label, button0], justify_content='flex-end')
         left_side = widgets.VBox([self.team_tag, self.team_name, buttonlabel,
                                   self.w_seasons, button1, self.progress, button2],
                                 justify_content='flex-end')
@@ -78,6 +78,7 @@ class TeamWidget(tc.TeamRawData):
     
     def plotter(self, *args):
         if hasattr(self, 'team_display'):
+            self.label.value = 'Wait...'
             with self.out1:
                 fig1 = self.players_scatter()
             with self.out2:
@@ -86,6 +87,7 @@ class TeamWidget(tc.TeamRawData):
                 fig3 = self.per_player()
             with self.out4:
                 fig4 = self.per_map()
+            self.label.value = 'Done'
             return fig1, fig2, fig3, fig4
         else:
             return
