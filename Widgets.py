@@ -31,11 +31,14 @@ class TeamWidget(tc.TeamRawData):
         buttonlabel = widgets.HBox([self.label, button0])
         left_side = widgets.VBox([self.team_tag, self.team_name, buttonlabel,
                                   self.w_seasons, button1, self.progress, button2],
-                                justify_content='right')
+                                justify_content='flex-end')
         right_side = widgets.Tab()
         right_side.children = [self.out1, self.out2, self.out3, self.out4]
-        right_side.titles = ['All players scatter plot', 'All maps scatter plot',
+        right_side_titles = ['All players scatter plot', 'All maps scatter plot',
                              'Individual player stats', 'Individual map stats']
+        for i in range(len(children)):
+            right-side.set_title(i, right_side_titles[i])
+        
         box = widgets.AppLayout(header=top_header,
           left_sidebar=left_side,
           center=right_side,
