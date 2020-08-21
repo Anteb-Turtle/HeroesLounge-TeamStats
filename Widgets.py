@@ -13,7 +13,7 @@ class TeamWidget(tc.TeamRawData):
         ## Set the widgets and display them
         self.team_tag = widgets.Text(tag, description='Team tag:')
         self.team_name = widgets.Text(name, description='Team name:')
-        self.seasons = widgets.SelectMultiple(options=[0,1,2,3,4,5,6,7,8,9],
+        self.w_seasons = widgets.SelectMultiple(options=[0,1,2,3,4,5,6,7,8,9],
                                         value= n,
                                         description='seasons',
                                         disabled=True)
@@ -33,7 +33,7 @@ class TeamWidget(tc.TeamRawData):
                              '<p>Enter team info and click "Check team", select seasons and click "Submit and run" button. ' +
                              'Wait for the data to be collected from heroes lounge.gg and then click "Display figures".</p>'))
         display(self.team_tag, self.team_name)
-        display(button0, self.label, self.seasons)
+        display(button0, self.label, self.w_seasons)
         display(button1, self.progress)
         display(button2, self.out)
         
@@ -41,13 +41,13 @@ class TeamWidget(tc.TeamRawData):
         ## Called only when the button is pressed
         self.label.value = 'Checking'
         super().__init__(self.team_tag.value, self.team_name.value)
-        self.seasons.options = self.seasons_names
+        self.w_seasons.options = self.seasons_names
         self.seasons.disabled = False
         self.label.value = 'Done'
         
     def submit_input(self, *args):
         ## Called only when the button is pressed
-        list_seasons = [self.all_seasons[i] for i,n in enumerate(self.seasons_names) if n in self.seasons.value]
+        list_seasons = [self.all_seasons[i] for i,n in enumerate(self.w_seasons_names) if n in self.w_seasons.value]
         self.set_seasons(list_seasons)
         ## Import data
         self.gather_online_data()
