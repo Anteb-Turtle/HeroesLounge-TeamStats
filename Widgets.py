@@ -52,7 +52,7 @@ class TeamWidget(tc.TeamRawData):
         ## Import data
         self.gather_online_data()
         ## Process data: convert to dataframes
-        self.team_display = tc.TeamDisplayData(raw_data = self.team_data)
+        self.team_display = tc.TeamDisplayData(raw_data = self)
         return self.team_display
     
     def plotter(self, *args):
@@ -197,7 +197,7 @@ class TeamWidget(tc.TeamRawData):
         # =============================================================================
         ## Find all matches links in filtered seasons
         matches_links = self._find_links(self.team_doc, ids)
-        self.progress.max = len(matches_links) - 1
+        self.progress.max = len(matches_links)
         self.progress.bar_style = ''
 
         # =============================================================================
