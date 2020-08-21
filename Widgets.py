@@ -21,9 +21,18 @@ class TeamWidget(tc.TeamRawData):
         button1 = widgets.Button(description="Submit and run")
         button2 = widgets.Button(description="Display figures")
         self.label = widgets.Label(value='')
-        
         self.progress = widgets.IntProgress(value=0, min=0, max=10,bar_style='')
-        self.out = widgets.Output()
+        
+        self.out1, self.out2, self.out3, self.out4 = widgets.Output(), widgets.Output(), widgets.Output(), widgets.Output()
+        
+        buttonlabel = widgets.HBox([button0, self.label])
+        left_side = widgets.Vbox([self.team_tag, self.team_name, buttonlabel,
+                                  self.w_seasons, button1, self.progress, button2])
+        right_side = widgets.Tab()
+        right_side.children = [self.out1, self.out2, self.out3, self.out4]
+        right_side.titles = ['All players scatter plot', 'All maps scatter plot',
+                             'Individual player stats', 'Individual map stats']
+        box = widgets.HBox([left_side, right_side])
         
         button0.on_click(self.instantiate)
         button1.on_click(self.submit_input)
@@ -32,10 +41,11 @@ class TeamWidget(tc.TeamRawData):
         display(widgets.HTML(value='<h1 style="font-size:20px;">HeroesLounge-TeamStats Tool</h1>'+
                              '<p>Enter team info and click "Check team", select seasons and click "Submit and run" button. ' +
                              'Wait for the data to be collected from heroes lounge.gg and then click "Display figures".</p>'))
-        display(self.team_tag, self.team_name)
-        display(button0, self.label, self.w_seasons)
-        display(button1, self.progress)
-        display(button2, self.out)
+#        display(self.team_tag, self.team_name)
+#        display(button0, self.label, self.w_seasons)
+#        display(button1, self.progress)
+#        display(button2, self.out)
+        display(box)
         
     def instantiate(self, *args): 
         ## Called only when the button is pressed
@@ -47,7 +57,7 @@ class TeamWidget(tc.TeamRawData):
         
     def submit_input(self, *args):
         ## Called only when the button is pressed
-        list_seasons = [self.all_seasons[i] for i,n in enumerate(self.seasons_names) if n in self.w_seasons.value]
+        list_seasons = [self.all_seasons[i] for i,n in enumerate(self.w_seasons_names) if n in self.w_seasons.value]
         self.set_seasons(list_seasons)
         ## Import data
         self.gather_online_data()
@@ -57,10 +67,13 @@ class TeamWidget(tc.TeamRawData):
     
     def plotter(self, *args):
         if hasattr(self, 'team_display'):
-            with self.out:
+            with self.out1:
                 fig1 = self.players_scatter()
+            with self.out2:
                 fig2 = self.maps_scatter()
+            with self.out3:
                 fig3 = self.per_player()
+            with self.out4:
                 fig4 = self.per_map()
             return fig1, fig2, fig3, fig4
         else:
