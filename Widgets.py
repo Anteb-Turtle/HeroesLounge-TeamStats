@@ -70,9 +70,11 @@ class TeamWidget(tc.TeamRawData):
         list_seasons = [self.all_seasons[i] for i,n in enumerate(self.seasons_names) if n in self.w_seasons.value]
         self.set_seasons(list_seasons)
         ## Import data
+        self.label.value = 'Wait...'
         self.gather_online_data()
         ## Process data: convert to dataframes
         self.team_display = tc.TeamDisplayData(raw_data = self)
+        self.label.value = 'Done'
         return self.team_display
     
     def plotter(self, *args):
