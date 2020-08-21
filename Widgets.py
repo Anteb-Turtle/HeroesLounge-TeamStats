@@ -20,9 +20,12 @@ class TeamWidget():
         button.on_click(self.submit_input)        
         button2 = widgets.Button(description="Display figures")
         button2.on_click(self.plotter)
-        print("Enter team info and click 'Submit and run' button\n",
-              "Wait for the data to be collected from heroes lounge.gg and then click 'Display figures'")
+        self.out = widgets.Output()
+        print("Enter team info and click 'Submit and run' button.",
+              "Wait for the data to be collected from heroes lounge.gg and then click 'Display figures'.")
         display(self.team_tag, self.team_name, self.seasons, button, button2)
+        display(self.out)
+        
         
         
     def submit_input(self, *args):
@@ -37,10 +40,11 @@ class TeamWidget():
     
     def plotter(self, *args):
         if hasattr(self, 'team_display'):
-            fig1 = self.players_scatter()
-            fig2 = self.maps_scatter()
-            fig3 = self.per_player()
-            fig4 = self.per_map()
+            with self.out:
+                fig1 = self.players_scatter()
+                fig2 = self.maps_scatter()
+                fig3 = self.per_player()
+                fig4 = self.per_map()
             return fig1, fig2, fig3, fig4
         else:
             return
@@ -155,5 +159,3 @@ class TeamWidget():
         fig = px.scatter(disp, x='hero', y='index', size='ocurence', color='WR', text=disp['played'])
         fig.show()
         return fig
-        
-        
