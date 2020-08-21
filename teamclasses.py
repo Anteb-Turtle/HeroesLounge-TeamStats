@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Fri Aug 21 13:27:15 2020
+
+@author: antoine.bierret
+"""
+
+# -*- coding: utf-8 -*-
 """ Classes defninitions
 """
 
@@ -32,6 +39,9 @@ class TeamRawData(Team):
     """
     def __init__(self, shortname, longname, list_of_last_seasons=[], **kwargs):
         super().__init__(shortname, longname, list_of_last_seasons)
+        self.step = 0
+        self.max_value = 9
+        self.status = ''
         if 'filename' in kwargs:
             filename = kwargs.get('filename')
             self.load_from_json(filename)
@@ -39,6 +49,14 @@ class TeamRawData(Team):
             gather = kwargs.get('gather_online')
             if gather == True:
                 self.gather_online_data()
+        
+        # =============================================================================
+        ## Get team info for heroeslounge.gg
+        self.team_doc = self._request_team_url()
+
+        # =============================================================================
+        ## Retreive seasons list
+        self.all_seasons = self._retreive_season_list(self.team_doc)
 
     def set_seasons(self, seasons_list):
         """ Set the seasons to be searched on heroeslounge.gg
@@ -90,7 +108,7 @@ class TeamRawData(Team):
         return doc, games, games_id
 
     def _retreive_season_list(self, doc, list_of_last_seasons):
-        """ Filters the seasons of interest from a list of seasons and the html code
+        """ Get all seasons names from the html code
         """
         ## Retreive seasons list
         id_list = [element.get('id') for element in doc.find_all('div')]
@@ -100,17 +118,20 @@ class TeamRawData(Team):
 
         test = doc.find('div', {'id':'roundmatches_groups'})
         ids = [a.get('href')[1:] for a in test.find_all('a')]
+        return ids
+    
+    def _filter_season_list(self, ids, seasons_filter):
+        """ Filters the seasons of interest from a list of seasons
+        """
         ## filter using list of strings
-        if all(isinstance(season,int) for season in list_of_last_seasons):
-            ids = [ids[i] for i in list_of_last_seasons]
+        if all(isinstance(season,int) for season in seasons_filter):
+            fids = [ids[i] for i in seasons_filter]
         ## filter using the names of the seasons
-        elif all(isinstance(season,str) for season in list_of_last_seasons):
-            names = [li.text.rstrip().lstrip() for li in test.find_all('li')]
-            names = [names.index(name) for name in names if name in list_of_last_seasons]
-            ids = [ids[i] for i in names]
+        elif all(isinstance(season,str) for season in seasons_filter):
+            fids = [fid for fid in ids if fid in seasons_filter]
         else:
             raise AttributeError('list_of_last_seasons wrong type')
-        return ids
+        return fids
 
     def _find_links(self, doc, ids):
         """ Returns a list of links to the matches on heroeslounge.gg
@@ -121,9 +142,9 @@ class TeamRawData(Team):
                 matches_list = div.find_all('a')
             matches_list = matches_list[1::3]
             matches_links = matches_links+[str(i.get('href')) for i in matches_list]
-        print('Number of matches to request: '+str(len(matches_links)))
-        print(matches_links)
-        print('\n')
+#        print('Number of matches to request: '+str(len(matches_links)))
+#        print(matches_links)
+#        print('\n')
         return matches_links
 
     def _retreive_game_data(self, game):
@@ -160,30 +181,29 @@ class TeamRawData(Team):
             list_of_last_seasons = opt_seasons
         
         # =============================================================================
-        ## Get team info for heroeslounge.gg
-        doc = self._request_team_url()
-
-        # =============================================================================
         ## Retreive seasons list
-        ids = self._retreive_season_list(doc, list_of_last_seasons)
-
+        ids = self._filter_season_list(self.all_seasons, list_of_last_seasons)
+        
         # =============================================================================
         ## Find all matches links in filtered seasons
-        matches_links = self._find_links(doc,ids)
+        matches_links = self._find_links(self.team_doc, ids)
+        self.max_value = len(matches_links) - 1
 
         # =============================================================================
         ## Retreive data from each match
         matchs_data = []
         for link in matches_links:
             doc1, games, games_id = self._retreive_link(link)
-            
+            self.status=''
             ## In case there is a forfeit ##
             if (True in [True for g in games if 'No Replay File found!' in g.text]):
-                print(games_id, ' no replay files found')
+#                print(games_id, ' no replay files found')
+                self.status='info'
                 continue
             ## In case the match has not been scheduled ##
             if "The match has not been scheduled yet!" in doc1.text:
-                print('The match has not been scheduled yet')
+#                print('The match has not been scheduled yet')
+                self.status='info'
                 continue
             ## In case the match is scheduled in the future##
             time = doc1.find('div', {'id': 'matchtime'})
@@ -192,10 +212,12 @@ class TeamRawData(Team):
             try: 
                 time = dt.datetime.strptime(time,"%d-%b-%Y-%H:%M")
                 if dt.datetime.now() < (time + dt.timedelta(hours=1, minutes=15)):
-                    print('The match has not been played yet')
+#                    print('The match has not been played yet')
+                    self.status='info'
                     continue
             except ValueError:
-                print(games_id, ' : Wrong date format. Match ignored')
+#                print(games_id, ' : Wrong date format. Match ignored')
+                self.status='warning'
                 continue
             ## ##
             
@@ -211,7 +233,8 @@ class TeamRawData(Team):
                 round_bans_team1.append(bans_team1)
                 round_bans_team2.append(bans_team2)
 
-            print('Match data gathered')
+#            print('Match data gathered')
+            self.step += 1
 
             duration = doc1.find_all('div', {'class':"col-12 col-md-2"})
             duration = [d.text.split()[1] for d in duration]
@@ -229,7 +252,9 @@ class TeamRawData(Team):
                 'maps': maps_played, 'winners': winner}
             matchs_data.append(match_data)
 
-        print('---- All data gathered ----')
+#        print('---- All data gathered ----')
+            self.status='success'
+        
 
         self.matchs_list = matchs_data
         return self
@@ -400,285 +425,3 @@ class TeamDisplayData(Team):
         self.df_bans_map = df_list[5]
 
         return self
-
-    def display_player_stats(self, players):
-        """ Plots the winrate for a number of players from the team
-        - if player is an integer: displays the stats for the first "players" players in the team
-        (sorted by number of matches played)
-        - if player is a list of strings: displays the stats for each player in the list
-        """
-        if players is None:
-            self.display_player_stats(players=5)
-        
-        elif isinstance(players, int): # displays the stats for the first players
-            n_lines = (players-1)//3+1
-            fig, ax = plt.subplots(n_lines, 3)
-            i = 0
-            for player in list(self.df_player_wr.iloc[0:players, :].index):
-                if n_lines > 1:
-                    self._team_stats_subplot(self.df_player_wr, self.df_player_played, ax[i//3, i%3], name=player)
-                else:
-                    self._team_stats_subplot(self.df_player_wr, self.df_player_played, ax[i], name=player)
-                i += 1
-
-        elif isinstance(players, list): # displays the stats for the given list of players
-            n_lines = (len(players)-1)//3+1
-            fig, ax = plt.subplots(n_lines, 3)
-            i = 0
-            for player in players:
-                if n_lines > 1:
-                    self._team_stats_subplot(ax[i//3, i%3], name=player)
-                else:
-                    self._team_stats_subplot(self.df_player_wr, self.df_player_played, ax[i], name=player)
-                i += 1
-
-        else:
-            print('Variable players: wrong type')
-            return
-
-        plt.tight_layout()
-        plt.show()
-
-    def display_map_bans(self, bans=None):
-        """ Displays a bar plot of banned heroes for each map
-        """
-        if bans is None:
-            N = len(self.df_bans_map.index)
-            n_lines = N//3+1
-            fig, ax = plt.subplots(n_lines, 3)
-
-            i = 0
-            for maps in list(self.df_bans_map.iloc[0:N, :].index):
-                self._team_stats_subplot(self.df_bans_map, self.df_bans_map, ax[i//3, i%3], name=maps, bans=True)
-                i += 1
-        elif isinstance(bans, int):
-            n_lines = (bans-1)//3+1
-            fig, ax = plt.subplots(n_lines, 3)
-            i = 0
-            for mapp in list(self.df_bans_map.iloc[0:bans, :].index):
-                if n_lines > 1:
-                    self._team_stats_subplot(self.df_bans_map, self.df_bans_map, ax[i//3, i%3], name=mapp, bans=True)
-                else:
-                    self._team_stats_subplot(self.df_bans_map, self.df_bans_map, ax[i], name=mapp, bans=True)
-                i += 1
-        elif isinstance(bans, list):
-            n_lines = (len(bans)-1)//3+1
-            fig, ax = plt.subplots(n_lines, 3)
-            i = 0
-            for mapp in bans:
-                if n_lines > 1:
-                    self._team_stats_subplot(self.df_bans_map, self.df_bans_map, ax[i//3, i%3], name=mapp, bans=True)
-                else:
-                    self._team_stats_subplot(self.df_bans_map, self.df_bans_map, ax[i], name=mapp, bans=True)
-                i += 1
-        else:
-            print('Variable bans: wrong type')
-        plt.tight_layout()
-        plt.show()
-
-    def display_map_stats(self, maps=None):
-        """ Displays a bar plot of heroes WR and number played for a player or a map
-        """
-        if maps is None:
-            N = len(self.df_map_wr.index)
-            ax = [None]*9
-            fig, ((ax[0], ax[1], ax[2]), (ax[3], ax[4], ax[5]), (ax[6], ax[7], ax[8])) = plt.subplots(3, 3)
-            i = 0
-            for mapp in list(self.df_map_wr.iloc[0:N, :].index):
-                self._team_stats_subplot(self.df_map_wr, self.df_map_played, ax[i], name=mapp)
-                i += 1
-        elif isinstance(maps, int):
-            n_lines = (maps-1)//3+1
-            fig, ax = plt.subplots(n_lines, 3)
-            i = 0
-            for mapp in list(self.df_map_wr.iloc[0:maps, :].index):
-                if n_lines > 1:
-                    self._team_stats_subplot(self.df_map_wr, self.df_map_played, ax[i//3, i%3], name=mapp)
-                else:
-                    self._team_stats_subplot(self.df_map_wr, self.df_map_played, ax[i], name=mapp)
-                i += 1
-        elif isinstance(maps, list):
-            n_lines = (len(maps)-1)//3+1
-            fig, ax = plt.subplots(n_lines, 3)
-            i = 0
-            for mapp in maps:
-                if n_lines > 1:
-                    self._team_stats_subplot(self.df_map_wr, self.df_map_played, ax[i//3, i%3], name=mapp)
-                else:
-                    self._team_stats_subplot(self.df_map_wr, self.df_map_played, ax[i], name=mapp)
-                i += 1
-        else:
-            print('Variable maps: wrong type')
-
-        plt.tight_layout()
-        plt.show()
-       
-    def _team_stats_subplot(self, WR_df, Played_df, ax, name='', bans=False):
-        """ Subplot for each player
-        """
-        ## Shaping data for plotting
-        WR_df = WR_df.transpose()
-        WR_df = WR_df.loc[:, [name]]
-        Played_df = Played_df.transpose()
-        Played_df = Played_df.loc[:, [name]]
-        Played_df, WR_df = fun.quick_played_sort(Played_df, WR_df, name)
-        WR_df = WR_df[list(Played_df[name] != 0)]
-        Played_df = Played_df[list(Played_df[name] != 0)]
-    
-        ## Highlight suggested bans in red: targets heroes overpicked and overperforming.
-        ## Margin may be modified to adjust results
-        if bans:
-            edges_color = ['red' if ban > Played_df[name].mean()*2  else 'black'
-                           for ban in Played_df[name]]
-            threshold = Played_df[name].mean()
-        else:
-            plm = Played_df[name].mean()
-            wrm = np.average(list(WR_df[name]),
-                             weights=(np.asarray(Played_df[name]) / float(sum(Played_df[name]))))
-            margin = 1.1
-            edges_color = ['red' if Played_df[name][i] > plm*margin and WR_df[name][i] > wrm*margin
-                           else 'black' for i in range(0, len(Played_df.index))]
-            threshold = wrm
-        WR_df[name].plot(ax=ax, kind='bar',
-                         color=plt.cm.Blues(Played_df[name]/max(list(Played_df[name]))),
-                         edgecolor=edges_color)
-        ax.plot([0, len(list(WR_df[name]))], [threshold, threshold], "k--", color='red')
-    
-        # add number of picks in text above the bars
-        i = 0
-        for p in ax.patches:
-            ax.annotate(str(list(Played_df[name])[i]), (p.get_x(), p.get_height() * 1.005),
-                        fontsize=8, ha='left')
-            i += 1
-        # add some text for labels, title and axes ticks
-        
-        if bans:
-            ax.set_title(self.team_shortname+' bans for map: '+name, fontsize=8)
-            ax.set_ylabel('Number of bans', fontsize=8)
-        else:
-            ax.set_title(self.team_shortname+' winrate by hero: '+name, fontsize=8)
-            ax.set_ylabel('WR (%)', fontsize=8)
-        ax.set_xticklabels(list(WR_df.index), fontsize=8)
-
-
-    def display_scatter_maps(self, size=14, s=100):
-        """
-            Scatter plot of maps by number of times played and winrate
-        """
-        # Scatter
-        played = np.array(self.df_map_played.sort_index().sum(axis=1) / 5)
-        winrate = np.array(self.df_wr_bymap.sort_index()).flatten()
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.scatter(played, winrate, color='b', marker='o', s=s)
-        
-        # Check for overlapping labels
-        pts_iter = zip(played, winrate)
-        seen = []
-        duplicates=[]       
-        for i, it in enumerate(pts_iter):
-            if it not in seen:
-                seen.append(it)
-            else:
-                duplicates.append(i)
-        pts_iter = zip(played, winrate)
-        
-        # Add labels to plot
-        for i, (x, y) in enumerate(pts_iter):
-            if x > np.average(played) and y > np.average(winrate):
-                ax.scatter(x, y, marker='o', color='b', s=s, edgecolor='red', linewidth=2)
-            if duplicates.count(i) == 1:
-                ax.annotate(np.array((self.df_wr_bymap.sort_index().index))[i], (x,y),horizontalalignment='right', verticalalignment='top', size=size)
-            elif duplicates.count(i) == 2:
-                ax.annotate(np.array((self.df_wr_bymap.sort_index().index))[i], (x,y),horizontalalignment='left', verticalalignment='top', size=size)
-            elif duplicates.count(i) == 3:
-                ax.annotate(np.array((self.df_wr_bymap.sort_index().index))[i], (x,y),horizontalalignment='left', verticalalignment='bottom', size=size)
-            else:
-                ax.annotate(np.array((self.df_wr_bymap.sort_index().index))[i], (x,y),horizontalalignment='right', verticalalignment='bottom', size=size)
-        
-        # Add average winrate
-        ax.plot([0, max(played)], [self.team_winrate, self.team_winrate], "k--", color='red')
-        ax.annotate('Average winrate '+ str(round(self.team_winrate,1)) + ' %', (0, self.team_winrate), horizontalalignment='left', verticalalignment='bottom', size=size, color='red')
-        
-        # Prettier plot
-        ax.set_title(self.team_shortname+' map priority', fontsize=16)
-        ax.set_ylabel('WR (%)', fontsize=size)
-        ax.set_xlabel('Numebr of rounds', fontsize=size)
-        ax.set_xticks(range(0,int(round(max(played)))+1))
-        ax.set_xticklabels(range(0,int(round(max(played)))+1), fontsize=size)
-        ax.set_yticks([0, 20, 40,  60, 80, 100])
-        ax.set_yticklabels([0, 20, 40, 60, 80, 100], fontsize=size)
-        plt.draw()
-           
-    def display_scatter_heroes(self, player=None, size=14, s=100):
-        if player is None:
-            winrate = self.df_player_wr * self.df_player_played
-            winrate = winrate.sum(axis=0)
-            played = np.array(self.df_player_played.sum(axis=0))
-            winrate = winrate / played
-            player = self.team_shortname
-            
-        elif player in self.df_player_played.index:
-            winrate = self.df_player_wr.loc[player]
-            played = np.array(self.df_player_played.loc[player])
-            winrate = winrate[[list(played != 0)]]
-            played = played[[list(played != 0)]]
-            
-        else:
-            raise ValueError("player not recognized")
-            
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.scatter(played, winrate, color='b', marker='o', s=100)
-        
-        # Check for overlapping labels
-        pts_iter = zip(played, winrate)
-        seen = []
-        for i, (x, y) in enumerate(pts_iter):
-            if (x, y) in seen:
-                if seen.count((x, y)) %8 == 1:
-                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='right', verticalalignment='top', size=size)
-                elif seen.count((x, y)) %8 == 2:
-                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='left', verticalalignment='top', size=size)
-                elif seen.count((x, y)) %8 == 3:
-                    ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='left', verticalalignment='bottom', size=size)
-                elif seen.count((x, y)) %8 == 4:
-                    ax.annotate(np.array(winrate.index)[i], (x,y), xytext=(0,-size),
-                                textcoords='offset points',horizontalalignment='right', verticalalignment='top', size=size)
-                elif seen.count((x, y)) %8 == 5:
-                    ax.annotate(np.array(winrate.index)[i], (x,y), xytext=(0,-size),
-                                textcoords='offset points', horizontalalignment='left', verticalalignment='top', size=size)
-                elif seen.count((x, y)) %8 == 6:
-                    ax.annotate(np.array(winrate.index)[i], (x,y), xytext=(0,size),
-                                textcoords='offset points', horizontalalignment='right', verticalalignment='bottom', size=size)
-                elif seen.count((x, y)) %8 == 7:
-                    ax.annotate(np.array(winrate.index)[i], (x,y), xytext=(0,size),
-                                textcoords='offset points', horizontalalignment='left', verticalalignment='bottom', size=size)
-                else:
-                    ax.annotate(np.array(winrate.index)[i], (x,y), horizontalalignment='right', verticalalignment='bottom', size=size)
-            else:
-                ax.annotate(np.array(winrate.index)[i], (x,y),horizontalalignment='right', verticalalignment='bottom', size=size)
-            seen.append((x, y))
-            if x > np.average(played) and y > np.average(winrate):
-                ax.scatter(x, y, marker='o', color='b', s=s, edgecolor='red', linewidth=2)
-            
-        
-        # Add average winrate
-        if player in self.df_player_played.index:
-            ax.plot([0, max(played)], [self.team_winrate, self.team_winrate], "k--", color='red')
-            ax.annotate('Average winrate '+ str(round(self.team_winrate,1)) + ' %', (0, self.team_winrate), horizontalalignment='left', verticalalignment='bottom', size=size, color='red')
-        else:
-            player_wr = np.average(np.array(winrate), weights=(np.asarray(played) / float(sum(played))))
-            ax.plot([0, max(played)], [player_wr, player_wr], "k--", color='red')
-            ax.annotate(f'Average winrate {round(player_wr,1)} %', (0, self.team_winrate), horizontalalignment='left', verticalalignment='bottom', size=size, color='red')
-        
-        # Prettier plot
-        ax.set_title(player + ' pick priority', fontsize=16)
-        ax.set_ylabel('WR (%)', fontsize=size)
-        ax.set_xlabel('Numebr of rounds', fontsize=size)
-        ax.set_xticks(range(0,int(round(max(played)))+1))
-        ax.set_xticklabels(range(0,int(round(max(played)))+1), fontsize=size)
-        ax.set_yticks([0, 20, 40,  60, 80, 100])
-        ax.set_yticklabels([0, 20, 40, 60, 80, 100], fontsize=size)
-        plt.draw()
-        
