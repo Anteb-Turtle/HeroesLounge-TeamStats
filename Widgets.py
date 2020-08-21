@@ -17,11 +17,9 @@ class TeamWidget():
                                         description='seasons',
                                         disabled=False)
         button = widgets.Button(description="Submit and run")
-        button.on_click(self.submit_input)
-        display(self.team_tag, self.team_name, self.seasons, button)
-        
+        button.on_click(self.submit_input)        
         button2 = widgets.Button(description="Display figures")
-        button2.on_click(self.plotter())
+        button2.on_click(self.plotter)
         print("Enter team info and click 'Submit and run' button\n",
               "Wait for the data to be collected from heroes lounge.gg and then click 'Display figures'")
         display(self.team_tag, self.team_name, self.seasons, button, button2)
