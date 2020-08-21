@@ -11,9 +11,7 @@ class TeamWidget(tc.TeamRawData):
     
     def __init__(self, tag = 'Turtles', name='Turtle Team', n = [0]):
         ## Set the widgets and display them
-        top_header = widgets.HTML(value='<h1 style="font-size:20px;">HeroesLounge-TeamStats Tool</h1>'+
-                             '<p>Enter team info and click "Check team", select seasons and click "Submit and run" button. ' +
-                             'Wait for the data to be collected from heroes lounge.gg and then click "Display figures".</p>')
+        top_header = widgets.HTML(value='<h1 style="font-size:20px;">HeroesLounge-TeamStats Tool</h1>'+'<p>Enter team info and click "Check team", select seasons and click "Submit and run" button. '+'Wait for the data to be collected from heroes lounge.gg and then click "Display figures".</p>')
         self.team_tag = widgets.Text(tag, description='Team tag:')
         self.team_name = widgets.Text(name, description='Team name:')
         self.w_seasons = widgets.SelectMultiple(options=[0,1,2,3,4,5,6,7,8,9],
