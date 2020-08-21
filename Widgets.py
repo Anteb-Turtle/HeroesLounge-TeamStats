@@ -47,7 +47,7 @@ class TeamWidget(tc.TeamRawData):
         
     def submit_input(self, *args):
         ## Called only when the button is pressed
-        list_seasons = [self.all_seasons[i] for i,n in enumerate(self.w_seasons_names) if n in self.w_seasons.value]
+        list_seasons = [self.all_seasons[i] for i,n in enumerate(self.seasons_names) if n in self.w_seasons.value]
         self.set_seasons(list_seasons)
         ## Import data
         self.gather_online_data()
