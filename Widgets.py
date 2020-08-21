@@ -15,27 +15,42 @@ class TeamWidget():
         self.seasons = widgets.SelectMultiple(options=[0,1,2,3,4,5,6,7,8,9],
                                         value= n,
                                         description='seasons',
-                                        disabled=False)
-        button = widgets.Button(description="Submit and run")
-        button.on_click(self.submit_input)        
+                                        disabled=True)
+        button0 = widgets.Button(description="Check team")
+        button1 = widgets.Button(description="Submit and run")
         button2 = widgets.Button(description="Display figures")
-        button2.on_click(self.plotter)
+        
+        self.progress = widgets.IntProgress(value=0, min=0, max=10,bar_style='')
         self.out = widgets.Output()
-        print("Enter team info and click 'Submit and run' button.",
-              "Wait for the data to be collected from heroes lounge.gg and then click 'Display figures'.")
-        display(self.team_tag, self.team_name, self.seasons, button, button2)
-        display(self.out)
         
+        button0.on_click(self.instantiate)
+        button1.on_click(self.submit_input)
+        button2.on_click(self.plotter)
         
+        display(widgets.HTML(value='<h1 style="font-size:20px;">HeroesLounge-TeamStats Tool</h1>'+
+                             '<p>Enter team info and click "Check team", select seasons and click "Submit and run" button. ' +
+                             'Wait for the data to be collected from heroes lounge.gg and then click "Display figures".</p>'))
+        display(self.team_tag, self.team_name)
+        display(button0, self.seasons)
+        display(button1, self.progress)
+        display(button2, self.out)
+        
+    def instantiate(self, *args): 
+        ## Called only when the button is pressed
+        self.team_data = tc.TeamRawData(self.team_tag.value, self.team_name.value)
+        self.seasons.options = self.team_data.all_seasons
+        self.seasons.disabled = False
+        self.progress.value = self.team_data.step
+        self.progress.max = self.team_data.max_value
+        self.progress.bar_style = self.team_data.status
         
     def submit_input(self, *args):
         ## Called only when the button is pressed
-        team_data = tc.TeamRawData(self.team_tag.value, self.team_name.value)
-        team_data.set_seasons(list(self.seasons.value))
+        self.team_data.set_seasons(list(self.seasons.value))
         ## Import data
-        team_data.gather_online_data()
+        self.team_data.gather_online_data()
         ## Process data: convert to dataframes
-        self.team_display = tc.TeamDisplayData(raw_data = team_data)
+        self.team_display = tc.TeamDisplayData(raw_data = self.team_data)
         return self.team_display
     
     def plotter(self, *args):
