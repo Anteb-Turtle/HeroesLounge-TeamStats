@@ -56,7 +56,7 @@ class TeamRawData(Team):
 
         # =============================================================================
         ## Retreive seasons list
-        self.all_seasons = self._retreive_season_list(self.team_doc)
+        self.all_seasons, self.seasons_names = self._retreive_season_list(self.team_doc)
 
     def set_seasons(self, seasons_list):
         """ Set the seasons to be searched on heroeslounge.gg
@@ -111,14 +111,11 @@ class TeamRawData(Team):
         """ Get all seasons names from the html code
         """
         ## Retreive seasons list
-        id_list = [element.get('id') for element in doc.find_all('div')]
-        ids = [i for i in id_list if 'roundmatches' in str(i)]
-        ## Filter by season
-        ids = ids[1:]
-
         test = doc.find('div', {'id':'roundmatches_groups'})
         ids = [a.get('href')[1:] for a in test.find_all('a')]
-        return ids
+        names = [a.contents[0].strip() for a in test.find_all('a')]
+        print(ids, names)
+        return ids, names
     
     def _filter_season_list(self, ids, seasons_filter):
         """ Filters the seasons of interest from a list of seasons
@@ -197,12 +194,12 @@ class TeamRawData(Team):
             self.status=''
             ## In case there is a forfeit ##
             if (True in [True for g in games if 'No Replay File found!' in g.text]):
-#                print(games_id, ' no replay files found')
+                print(games_id, ' no replay files found')
                 self.status='info'
                 continue
             ## In case the match has not been scheduled ##
             if "The match has not been scheduled yet!" in doc1.text:
-#                print('The match has not been scheduled yet')
+                print('The match has not been scheduled yet')
                 self.status='info'
                 continue
             ## In case the match is scheduled in the future##
@@ -212,11 +209,11 @@ class TeamRawData(Team):
             try: 
                 time = dt.datetime.strptime(time,"%d-%b-%Y-%H:%M")
                 if dt.datetime.now() < (time + dt.timedelta(hours=1, minutes=15)):
-#                    print('The match has not been played yet')
+                    print('The match has not been played yet')
                     self.status='info'
                     continue
             except ValueError:
-#                print(games_id, ' : Wrong date format. Match ignored')
+                print(games_id, ' : Wrong date format. Match ignored')
                 self.status='warning'
                 continue
             ## ##
@@ -233,7 +230,7 @@ class TeamRawData(Team):
                 round_bans_team1.append(bans_team1)
                 round_bans_team2.append(bans_team2)
 
-#            print('Match data gathered')
+            print('Match data gathered')
             self.step += 1
 
             duration = doc1.find_all('div', {'class':"col-12 col-md-2"})
@@ -252,7 +249,7 @@ class TeamRawData(Team):
                 'maps': maps_played, 'winners': winner}
             matchs_data.append(match_data)
 
-#        print('---- All data gathered ----')
+        print('---- All data gathered ----')
             self.status='success'
         
 
