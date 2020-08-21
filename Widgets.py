@@ -38,7 +38,7 @@ class TeamWidget():
     def instantiate(self, *args): 
         ## Called only when the button is pressed
         self.team_data = tc.TeamRawData(self.team_tag.value, self.team_name.value)
-        self.seasons.options = self.team_data.all_seasons
+        self.seasons.options = self.team_data.seasons_names
         self.seasons.disabled = False
         self.progress.value = self.team_data.step
         self.progress.max = self.team_data.max_value
@@ -46,7 +46,8 @@ class TeamWidget():
         
     def submit_input(self, *args):
         ## Called only when the button is pressed
-        self.team_data.set_seasons(list(self.seasons.value))
+        list_seasons = [self.team_data.all_seasons[i] for i,n in enumerate(self.team_data.seasons_names) if n in self.seasons.values]
+        self.team_data.set_seasons(list_seasons)
         ## Import data
         self.team_data.gather_online_data()
         ## Process data: convert to dataframes
