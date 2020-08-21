@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Aug 20 10:00:11 2020
-
-@author: antoine.bierret
-"""
-
 import teamclasses as tc
 import ipywidgets as widgets
 from ipywidgets import interact, interact_manual, interactive
@@ -27,6 +20,13 @@ class TeamWidget():
         button.on_click(self.submit_input)
         display(self.team_tag, self.team_name, self.seasons, button)
         
+        button2 = widgets.Button(description="Display figures")
+        button2.on_click(self.plotter())
+        print("Enter team info and click 'Submit and run' button\n",
+              "Wait for the data to be collected from heroes lounge.gg and then click 'Display figures'")
+        display(self.team_tag, self.team_name, self.seasons, button, button2)
+        
+        
     def submit_input(self, *args):
         ## Called only when the button is pressed
         team_data = tc.TeamRawData(self.team_tag.value, self.team_name.value)
@@ -36,25 +36,15 @@ class TeamWidget():
         ## Process data: convert to dataframes
         self.team_display = tc.TeamDisplayData(raw_data = team_data)
         return self.team_display
-
-
     
-class DisplayWidget():
-    def __init__(self, team_display, ):
-        self.team_display = team_display
-        
-        #children = [self.players_scatter(), self.maps_scatter()]
-        #tab = widgets.Tab()
-        #tab.children = children
-        #tab.titles = ['Stats for all players', 'Stats for all maps']
-        #display(tab)
-        self.players_scatter()
-        self.maps_scatter()
-        self.per_player()
-        self.per_map()
-        
+    def plotter(self, *args):
+        fig1 = self.players_scatter()
+        fig2 = self.maps_scatter()
+        fig3 = self.per_player()
+        fig4 = self.per_map()
+        return fig1, fig2, fig3, fig4
     
-    def players_scatter(self):
+    def players_scatter(self, *args):
         tidy_players = (self.team_display.df_player_wr * self.team_display.df_player_played).sum(axis=0)
         tidy_players = pd.concat([tidy_players, self.team_display.df_player_played.sum(axis=0)], axis=1)
         tidy_players.columns = ['WR', 'played']
@@ -97,8 +87,8 @@ class DisplayWidget():
         ])
         fig.show()
         return fig
-        
-    def maps_scatter(self):   
+    
+    def maps_scatter(self, *args):   
         tidy_maps = self.team_display.df_wr_bymap
         tidy_maps = pd.concat([tidy_maps, self.team_display.df_map_played.sum(axis=1)/5], axis=1)
         tidy_maps.columns = ['WR', 'played']
@@ -141,7 +131,7 @@ class DisplayWidget():
         fig.show()
         return fig
     
-    def per_player(self):
+    def per_player(self, *args):
         disp1 = pd.melt(self.team_display.df_player_wr.reset_index(), id_vars=['index'], var_name='hero', value_name='WR')
         disp2 = pd.melt(self.team_display.df_player_played.reset_index(), id_vars=['index'], var_name='hero', value_name='played')
         disp = pd.merge(disp1,disp2, how='outer')
@@ -151,7 +141,7 @@ class DisplayWidget():
         fig.show()
         return fig
 
-    def per_map(self):
+    def per_map(self, *args):
         disp1 = pd.melt(self.team_display.df_map_wr.reset_index(), id_vars=['index'], var_name='hero', value_name='WR')
         disp2 = pd.melt(self.team_display.df_map_played.reset_index(), id_vars=['index'], var_name='hero', value_name='played')
         disp3 = pd.melt(self.team_display.df_bans_map.reset_index(), id_vars=['index'], var_name='hero', value_name='banned')
@@ -164,8 +154,5 @@ class DisplayWidget():
         fig = px.scatter(disp, x='hero', y='index', size='ocurence', color='WR', text=disp['played'])
         fig.show()
         return fig
-        
-        
-     
         
         
