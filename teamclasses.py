@@ -250,7 +250,7 @@ class TeamRawData(Team):
             matchs_data.append(match_data)
 
         print('---- All data gathered ----')
-            self.status='success'
+        self.status='success'
         
 
         self.matchs_list = matchs_data
