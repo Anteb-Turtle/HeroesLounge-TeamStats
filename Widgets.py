@@ -38,11 +38,14 @@ class TeamWidget():
         return self.team_display
     
     def plotter(self, *args):
-        fig1 = self.players_scatter()
-        fig2 = self.maps_scatter()
-        fig3 = self.per_player()
-        fig4 = self.per_map()
-        return fig1, fig2, fig3, fig4
+        if self.team_display:
+            fig1 = self.players_scatter()
+            fig2 = self.maps_scatter()
+            fig3 = self.per_player()
+            fig4 = self.per_map()
+            return fig1, fig2, fig3, fig4
+        else:
+            return
     
     def players_scatter(self, *args):
         tidy_players = (self.team_display.df_player_wr * self.team_display.df_player_played).sum(axis=0)
