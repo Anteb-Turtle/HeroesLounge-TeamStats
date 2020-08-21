@@ -46,7 +46,7 @@ class TeamWidget():
         
     def submit_input(self, *args):
         ## Called only when the button is pressed
-        list_seasons = [self.team_data.all_seasons[i] for i,n in enumerate(self.team_data.seasons_names) if n in self.seasons.values]
+        list_seasons = [self.team_data.all_seasons[i] for i,n in enumerate(self.team_data.seasons_names) if n in self.seasons.value]
         self.team_data.set_seasons(list_seasons)
         ## Import data
         self.team_data.gather_online_data()
