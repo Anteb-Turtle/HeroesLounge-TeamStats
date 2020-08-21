@@ -26,7 +26,7 @@ class TeamWidget(tc.TeamRawData):
         self.out1, self.out2, self.out3, self.out4 = widgets.Output(), widgets.Output(), widgets.Output(), widgets.Output()
         
         buttonlabel = widgets.HBox([button0, self.label])
-        left_side = widgets.Vbox([self.team_tag, self.team_name, buttonlabel,
+        left_side = widgets.VBox([self.team_tag, self.team_name, buttonlabel,
                                   self.w_seasons, button1, self.progress, button2])
         right_side = widgets.Tab()
         right_side.children = [self.out1, self.out2, self.out3, self.out4]
