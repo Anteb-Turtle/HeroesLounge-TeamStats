@@ -8,7 +8,7 @@ import numpy as np
 
 class TeamWidget():
     
-    def __init__(self, tag = 'Turtles', name='Turtle Team', n = [2]):
+    def __init__(self, tag = 'Turtles', name='Turtle Team', n = [0]):
         ## Set the widgets and display them
         self.team_tag = widgets.Text(tag, description='Team tag:')
         self.team_name = widgets.Text(name, description='Team name:')
