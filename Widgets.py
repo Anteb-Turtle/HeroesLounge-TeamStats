@@ -28,9 +28,10 @@ class TeamWidget(tc.TeamRawData):
         
         self.out1, self.out2, self.out3, self.out4 = widgets.Output(), widgets.Output(), widgets.Output(), widgets.Output()
         
-        buttonlabel = widgets.HBox([button0, self.label])
+        buttonlabel = widgets.HBox([self.label, button0])
         left_side = widgets.VBox([self.team_tag, self.team_name, buttonlabel,
-                                  self.w_seasons, button1, self.progress, button2])
+                                  self.w_seasons, button1, self.progress, button2],
+                                justify_content='right')
         right_side = widgets.Tab()
         right_side.children = [self.out1, self.out2, self.out3, self.out4]
         right_side.titles = ['All players scatter plot', 'All maps scatter plot',
@@ -56,7 +57,7 @@ class TeamWidget(tc.TeamRawData):
         
     def instantiate(self, *args): 
         ## Called only when the button is pressed
-        self.label.value = 'Checking'
+        self.label.value = 'Checking...'
         super().__init__(self.team_tag.value, self.team_name.value)
         self.w_seasons.options = self.seasons_names
         self.w_seasons.disabled = False
