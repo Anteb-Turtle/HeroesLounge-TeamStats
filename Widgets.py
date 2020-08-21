@@ -5,8 +5,9 @@ from IPython.display import display
 import plotly.express as px
 import pandas as pd
 import numpy as np
+import datetime as dt
 
-class TeamWidget():
+class TeamWidget(tc.TeamRawData):
     
     def __init__(self, tag = 'Turtles', name='Turtle Team', n = [0]):
         ## Set the widgets and display them
@@ -19,6 +20,7 @@ class TeamWidget():
         button0 = widgets.Button(description="Check team")
         button1 = widgets.Button(description="Submit and run")
         button2 = widgets.Button(description="Display figures")
+        self.label = widgets.Label(value='')
         
         self.progress = widgets.IntProgress(value=0, min=0, max=10,bar_style='')
         self.out = widgets.Output()
@@ -31,25 +33,24 @@ class TeamWidget():
                              '<p>Enter team info and click "Check team", select seasons and click "Submit and run" button. ' +
                              'Wait for the data to be collected from heroes lounge.gg and then click "Display figures".</p>'))
         display(self.team_tag, self.team_name)
-        display(button0, self.seasons)
+        display(button0, self.label, self.seasons)
         display(button1, self.progress)
         display(button2, self.out)
         
     def instantiate(self, *args): 
         ## Called only when the button is pressed
-        self.team_data = tc.TeamRawData(self.team_tag.value, self.team_name.value)
-        self.seasons.options = self.team_data.seasons_names
+        self.label.value = 'Checking'
+        super().__init__(self.team_tag.value, self.team_name.value)
+        self.seasons.options = self.seasons_names
         self.seasons.disabled = False
-        self.progress.value = self.team_data.step
-        self.progress.max = self.team_data.max_value
-        self.progress.bar_style = self.team_data.status
+        self.label.value = 'Done'
         
     def submit_input(self, *args):
         ## Called only when the button is pressed
-        list_seasons = [self.team_data.all_seasons[i] for i,n in enumerate(self.team_data.seasons_names) if n in self.seasons.value]
-        self.team_data.set_seasons(list_seasons)
+        list_seasons = [self.all_seasons[i] for i,n in enumerate(self.seasons_names) if n in self.seasons.value]
+        self.set_seasons(list_seasons)
         ## Import data
-        self.team_data.gather_online_data()
+        self.gather_online_data()
         ## Process data: convert to dataframes
         self.team_display = tc.TeamDisplayData(raw_data = self.team_data)
         return self.team_display
@@ -175,3 +176,96 @@ class TeamWidget():
         fig = px.scatter(disp, x='hero', y='index', size='ocurence', color='WR', text=disp['played'])
         fig.show()
         return fig
+    
+    def gather_online_data(self, opt_seasons=[]):
+        """ Reteives inforamtion from Heroeslounge.gg
+        Computes the matchs_list dict containing all raw datas from the team
+        """
+        if not (self.seasons or opt_seasons):
+            print('Please specify the seasons your are interested in')
+            print('Trying with current season')
+            list_of_last_seasons = [0]
+        if not opt_seasons:
+            list_of_last_seasons = self.seasons
+        else:
+            list_of_last_seasons = opt_seasons
+        
+        # =============================================================================
+        ## Retreive seasons list
+        ids = self._filter_season_list(self.all_seasons, list_of_last_seasons)
+        
+        # =============================================================================
+        ## Find all matches links in filtered seasons
+        matches_links = self._find_links(self.team_doc, ids)
+        self.progress.max = len(matches_links) - 1
+        self.progress.bar_style = ''
+
+        # =============================================================================
+        ## Retreive data from each match
+        matchs_data = []
+        for link in matches_links:
+            doc1, games, games_id = self._retreive_link(link)
+            self.progress.bar_style = ''
+            ## In case there is a forfeit ##
+            if (True in [True for g in games if 'No Replay File found!' in g.text]):
+                print(games_id, ' no replay files found')
+                self.progress.bar_style = 'info'
+                continue
+            ## In case the match has not been scheduled ##
+            if "The match has not been scheduled yet!" in doc1.text:
+                print('The match has not been scheduled yet')
+                self.progress.bar_style = 'info'
+                continue
+            ## In case the match is scheduled in the future##
+            time = doc1.find('div', {'id': 'matchtime'})
+            time = time.find('h3').text
+            time = '-'.join(str(time).split()[2:])
+            try: 
+                time = dt.datetime.strptime(time,"%d-%b-%Y-%H:%M")
+                if dt.datetime.now() < (time + dt.timedelta(hours=1, minutes=15)):
+                    print('The match has not been played yet')
+                    self.progress.bar_style = 'info'
+                    continue
+            except ValueError:
+                print(games_id, ' : Wrong date format. Match ignored')
+                self.progress.bar_style = 'warning'
+                continue
+            ## ##
+            
+            ## Extract data from each game/round of the match
+            round_picks_team1 = []
+            round_picks_team2 = []
+            round_bans_team1 = []
+            round_bans_team2 = []
+            for game in games:
+                teams, picks_team1, picks_team2, bans_team1, bans_team2 = self._retreive_game_data(game)
+                round_picks_team1.append(picks_team1)
+                round_picks_team2.append(picks_team2)
+                round_bans_team1.append(bans_team1)
+                round_bans_team2.append(bans_team2)
+
+            print('Match data gathered')
+            self.progress.value += 1
+
+            duration = doc1.find_all('div', {'class':"col-12 col-md-2"})
+            duration = [d.text.split()[1] for d in duration]
+
+            maps_played = doc1.find_all('span', {'class':"badge badge-info"})
+            maps_played = [m.text for m in maps_played]
+
+            winner = doc1.findAll('span', {'class':["badge badge-success float-left", "badge badge-success float-right"]})
+            winner = [teams[0] if w.get('class')[2] == "float-right" else teams[1] for w in winner]
+
+            ## Store all data in a dictionnary
+            match_data = {'match': link.split('/')[-1], 'games_id': games_id, 'teams': teams, \
+                'picks_team_1': round_picks_team1, 'picks_team_2': round_picks_team2, \
+                'bans_team_1': round_bans_team1, 'bans_team_2': round_bans_team2, 'durations': duration, \
+                'maps': maps_played, 'winners': winner}
+            matchs_data.append(match_data)
+
+        print('---- All data gathered ----')
+        self.progress.bar_style = 'success'
+        
+
+        self.matchs_list = matchs_data
+        return self
