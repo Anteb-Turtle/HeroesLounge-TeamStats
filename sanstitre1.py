@@ -15,7 +15,7 @@ import numpy as np
 
 class TeamWidget():
     
-    def __init__(self, tag = 'Turtles', name='Turtle Team', n = [0]):
+    def __init__(self, tag = 'Turtles', name='Turtle Team', n = [2]):
         ## Set the widgets and display them
         self.team_tag = widgets.Text(tag, description='Team tag:')
         self.team_name = widgets.Text(name, description='Team name:')
@@ -43,12 +43,15 @@ class DisplayWidget():
     def __init__(self, team_display, ):
         self.team_display = team_display
         
-        children = [self.players_scatter(), self.maps_scatter()]
-        tab = widgets.Tab()
-        tab.children = children
-        tab.titles = ['Stats for all players', 'Stats for all maps']
-        display(tab)
-                
+        #children = [self.players_scatter(), self.maps_scatter()]
+        #tab = widgets.Tab()
+        #tab.children = children
+        #tab.titles = ['Stats for all players', 'Stats for all maps']
+        #display(tab)
+        self.players_scatter()
+        self.maps_scatter()
+        self.per_player()
+        self.per_map()
         
     
     def players_scatter(self):
@@ -138,7 +141,7 @@ class DisplayWidget():
         fig.show()
         return fig
     
-    def players_hist(self):
+    def per_player(self):
         disp1 = pd.melt(self.team_display.df_player_wr.reset_index(), id_vars=['index'], var_name='hero', value_name='WR')
         disp2 = pd.melt(self.team_display.df_player_played.reset_index(), id_vars=['index'], var_name='hero', value_name='played')
         disp = pd.merge(disp1,disp2, how='outer')
