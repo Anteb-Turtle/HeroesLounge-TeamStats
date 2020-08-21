@@ -38,7 +38,7 @@ class TeamWidget():
         return self.team_display
     
     def plotter(self, *args):
-        if self.team_display:
+        if hasattr(self, 'team_display'):
             fig1 = self.players_scatter()
             fig2 = self.maps_scatter()
             fig3 = self.per_player()
