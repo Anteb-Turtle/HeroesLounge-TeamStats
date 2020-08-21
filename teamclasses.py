@@ -107,7 +107,7 @@ class TeamRawData(Team):
         games_id = [i.get('id') for i in games]
         return doc, games, games_id
 
-    def _retreive_season_list(self, doc, list_of_last_seasons):
+    def _retreive_season_list(self, doc):
         """ Get all seasons names from the html code
         """
         ## Retreive seasons list
