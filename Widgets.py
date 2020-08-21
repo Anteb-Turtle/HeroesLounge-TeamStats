@@ -42,7 +42,7 @@ class TeamWidget(tc.TeamRawData):
         self.label.value = 'Checking'
         super().__init__(self.team_tag.value, self.team_name.value)
         self.w_seasons.options = self.seasons_names
-        self.seasons.disabled = False
+        self.w_seasons.disabled = False
         self.label.value = 'Done'
         
     def submit_input(self, *args):
