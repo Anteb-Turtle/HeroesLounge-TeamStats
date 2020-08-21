@@ -36,8 +36,8 @@ class TeamWidget(tc.TeamRawData):
         right_side.children = [self.out1, self.out2, self.out3, self.out4]
         right_side_titles = ['All players scatter plot', 'All maps scatter plot',
                              'Individual player stats', 'Individual map stats']
-        for i in range(len(children)):
-            right-side.set_title(i, right_side_titles[i])
+        for i in range(len(right_side.children)):
+            right_side.set_title(i, right_side_titles[i])
         
         box = widgets.AppLayout(header=top_header,
           left_sidebar=left_side,
