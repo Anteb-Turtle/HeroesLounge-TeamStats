@@ -66,10 +66,14 @@ class TeamWidget(tc.TeamRawData):
         super().__init__(self.team_tag.value, self.team_name.value)
         self.label_error.value, self.progress.bar_style = fun.check_http_error(self.team_doc)
         if hasattr(self, 'seasons_names'):
-            self.w_seasons.options = self.seasons_names
-            self.w_seasons.disabled = False
-            self.button1.disabled = False
-            self.label1.value = 'Done'
+            if self.seasons_names:
+                self.w_seasons.options = self.seasons_names
+                self.w_seasons.disabled = False
+                self.button1.disabled = False
+                self.label1.value = 'Done'
+            else:
+                self.label_error.value = f"Cannot find played seasons for team {self.team_tag.value}"
+                self.label1.value = 'Error'
         else:
             self.label1.value = 'Error'
         
