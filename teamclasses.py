@@ -117,9 +117,12 @@ class TeamRawData(Team):
         """
         ## Retreive seasons list
         test = doc.find('div', {'id':'roundmatches_groups'})
-        ids = [a.get('href')[1:] for a in test.find_all('a')]
-        names = [a.contents[0].strip() for a in test.find_all('a')]
-        print(ids, names)
+        if test:
+            ids = [a.get('href')[1:] for a in test.find_all('a')]
+            names = [a.contents[0].strip() for a in test.find_all('a')]
+            print(ids, names)
+        else:
+            ids, names = None, None
         return ids, names
     
     def _filter_season_list(self, ids, seasons_filter):
