@@ -11,26 +11,33 @@ class TeamWidget(tc.TeamRawData):
     
     def __init__(self, tag = 'Turtles', name='Turtle Team', n = [0]):
         ## Set the widgets and display them
-        top_header = widgets.HTML(value='<h1 style="font-size:20px;">HeroesLounge-TeamStats Tool</h1>'+
+        top_header = widgets.HTML(value='<h1 style="font-size:20px;">HeroesLounge-TeamStats Dashboard</h1>'+
                                   '<p>Enter team info and click "Check team", select seasons and click "Submit and run" button. '+
-                                  'Wait for the data to be collected from heroes lounge.gg and then click "Display figures".</p>')
-        self.team_tag = widgets.Text(tag, description='Team tag:')
-        self.team_name = widgets.Text(name, description='Team name:')
+                                  'Wait for the data to be collected from heroeslounge.gg and then click "Display figures".</p>'+
+                                  '<p>Source code is available at https://github.com/Anteb-Turtle/HeroesLounge-TeamStats</p>')
+        tag_label = widgets.Label(value='Team tag:')
+        team_label = widgets.Label(value='Team name:')
+        self.team_tag = widgets.Text(tag)
+        self.team_name = widgets.Text(name)
         self.w_seasons = widgets.SelectMultiple(options=[0,1,2,3,4,5,6,7,8,9],
                                         value= n,
                                         description='seasons',
                                         disabled=True)
         button0 = widgets.Button(description="Check team")
-        button1 = widgets.Button(description="Submit and run")
-        button2 = widgets.Button(description="Display figures")
-        self.label = widgets.Label(value='')
+        self.button1 = widgets.Button(description="Submit and run", disabled=True)
+        self.button2 = widgets.Button(description="Display figures", disabled=True)
+        self.label1 = widgets.Label(value='')
+        self.label2 = widgets.Label(value='')
         self.progress = widgets.IntProgress(value=0, min=0, max=10,bar_style='')
         
         self.out1, self.out2, self.out3, self.out4 = widgets.Output(), widgets.Output(), widgets.Output(), widgets.Output()
         
-        buttonlabel = widgets.HBox([button0, self.label])
-        left_side = widgets.VBox([self.team_tag, self.team_name, buttonlabel,
-                                  self.w_seasons, button1, self.progress, button2])
+        buttonlabel1 = widgets.HBox([button0, self.label1])
+        buttonlabel2 = widgets.HBox([self.button1, self.label2])
+        left_side = widgets.VBox([tag_label, self.team_tag, 
+                                  team_label, self.team_name, buttonlabel1,
+                                  self.w_seasons, buttonlabel2, 
+                                  self.progress, self.button2])
         right_side = widgets.Tab()
         right_side.children = [self.out1, self.out2, self.out3, self.out4]
         right_side_titles = ['All players scatter plot', 'All maps scatter plot',
@@ -45,39 +52,35 @@ class TeamWidget(tc.TeamRawData):
           footer=None)
         
         button0.on_click(self.instantiate)
-        button1.on_click(self.submit_input)
-        button2.on_click(self.plotter)
+        self.button1.on_click(self.submit_input)
+        self.button2.on_click(self.plotter)
         
-#        display(widgets.HTML(value='<h1 style="font-size:20px;">HeroesLounge-TeamStats Tool</h1>'+
-#                             '<p>Enter team info and click "Check team", select seasons and click "Submit and run" button. ' +
-#                             'Wait for the data to be collected from heroes lounge.gg and then click "Display figures".</p>'))
-#        display(self.team_tag, self.team_name)
-#        display(button0, self.label, self.w_seasons)
-#        display(button1, self.progress)
-#        display(button2, self.out)
         display(box)
         
     def instantiate(self, *args): 
-        ## Called only when the button is pressed
-        self.label.value = 'Checking...'
+        ## Called only when the button0 is pressed
+        self.label1.value = 'Checking...'
         super().__init__(self.team_tag.value, self.team_name.value)
         self.w_seasons.options = self.seasons_names
         self.w_seasons.disabled = False
-        self.label.value = 'Done'
+        self.button1.disabled = False
+        self.label1.value = 'Done'
         
     def submit_input(self, *args):
-        ## Called only when the button is pressed
+        ## Called only when the button1 is pressed
         list_seasons = [self.all_seasons[i] for i,n in enumerate(self.seasons_names) if n in self.w_seasons.value]
         self.set_seasons(list_seasons)
         ## Import data
-        self.label.value = 'Wait...'
+        self.label2.value = 'Wait...'
         self.gather_online_data()
         ## Process data: convert to dataframes
         self.team_display = tc.TeamDisplayData(raw_data = self)
-        self.label.value = 'Done'
+        self.button2.disabled = False
+        self.label2.value = 'Done'
         return self.team_display
     
     def plotter(self, *args):
+        ## Called only when the button2 is pressed
         if hasattr(self, 'team_display'):
             self.label.value = 'Wait...'
             with self.out1:
@@ -226,6 +229,7 @@ class TeamWidget(tc.TeamRawData):
         matches_links = self._find_links(self.team_doc, ids)
         self.progress.max = len(matches_links)
         self.progress.bar_style = ''
+        self.progress.value = 0
 
         # =============================================================================
         ## Retreive data from each match
