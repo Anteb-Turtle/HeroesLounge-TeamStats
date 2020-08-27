@@ -1,4 +1,5 @@
 import teamclasses as tc
+import supportfunctions as fun
 import ipywidgets as widgets
 from ipywidgets import interact, interact_manual, interactive
 from IPython.display import display
@@ -28,6 +29,7 @@ class TeamWidget(tc.TeamRawData):
         self.button2 = widgets.Button(description="Display figures", disabled=True)
         self.label1 = widgets.Label(value='')
         self.label2 = widgets.Label(value='')
+        self.label_error = widgets.Label(value='')
         self.progress = widgets.IntProgress(value=0, min=0, max=10,bar_style='')
         
         self.out1, self.out2, self.out3, self.out4 = widgets.Output(), widgets.Output(), widgets.Output(), widgets.Output()
@@ -37,7 +39,8 @@ class TeamWidget(tc.TeamRawData):
         left_side = widgets.VBox([tag_label, self.team_tag, 
                                   team_label, self.team_name, buttonlabel1,
                                   self.w_seasons, buttonlabel2, 
-                                  self.progress, self.button2])
+                                  self.progress, self.button2,
+                                  self.label_error])
         right_side = widgets.Tab()
         right_side.children = [self.out1, self.out2, self.out3, self.out4]
         right_side_titles = ['All players scatter plot', 'All maps scatter plot',
@@ -61,10 +64,14 @@ class TeamWidget(tc.TeamRawData):
         ## Called only when the button0 is pressed
         self.label1.value = 'Checking...'
         super().__init__(self.team_tag.value, self.team_name.value)
-        self.w_seasons.options = self.seasons_names
-        self.w_seasons.disabled = False
-        self.button1.disabled = False
-        self.label1.value = 'Done'
+        self.label_error.value, self.progress.bar_style = fun.check_http_error(self.team_doc)
+        if hasattr(self, 'seasons_names'):
+            self.w_seasons.options = self.seasons_names
+            self.w_seasons.disabled = False
+            self.button1.disabled = False
+            self.label1.value = 'Done'
+        else:
+            self.label1.value = 'Error'
         
     def submit_input(self, *args):
         ## Called only when the button1 is pressed
@@ -235,8 +242,10 @@ class TeamWidget(tc.TeamRawData):
         ## Retreive data from each match
         matchs_data = []
         for link in matches_links:
-            doc1, games, games_id = self._retreive_link(link)
             self.progress.bar_style = ''
+            doc1, games, games_id = self._retreive_link(link)
+            self.label_error.value, self.progress.bar_style = fun.check_http_error(doc1)
+            
             ## In case there is a forfeit ##
             if (True in [True for g in games if 'No Replay File found!' in g.text]):
                 print(games_id, ' no replay files found')
