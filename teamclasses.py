@@ -56,7 +56,8 @@ class TeamRawData(Team):
 
         # =============================================================================
         ## Retreive seasons list
-        self.all_seasons, self.seasons_names = self._retreive_season_list(self.team_doc)
+        if not isinstance(self.team_doc, int):
+            self.all_seasons, self.seasons_names = self._retreive_season_list(self.team_doc)
 
     def set_seasons(self, seasons_list):
         """ Set the seasons to be searched on heroeslounge.gg
@@ -87,7 +88,9 @@ class TeamRawData(Team):
         print('Requesting team html')
         url = "https://heroeslounge.gg/team/view/" + self.team_shortname
         result = requests.get(url)
-        result.raise_for_status()
+        #result.raise_for_status()
+        if not result.ok:
+            return result.status_code
         page = result.text
         doc = soup(page, features="html5lib")
         print('Request completed')
@@ -99,7 +102,9 @@ class TeamRawData(Team):
         """
         print('Requesting link:', link)
         result = requests.get(link)
-        result.raise_for_status()
+        #result.raise_for_status()
+        if not result.ok:
+            return result.status_code, 0, 0
         print('Request completed')
         page = result.text
         doc = soup(page, features="html5lib")
