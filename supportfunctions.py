@@ -126,11 +126,11 @@ def check_http_error(status):
     """
     if isinstance(status, int):
         if status == 200:
-            return ''
+            return '', ''
         elif status in range(400, 452, 1):
-            return f"HTTPError{status}. Bad request: change parameters and try again."
+            return f"HTTPError{status}. Bad request: change parameters and try again.", "danger"
         elif status == 429:
-            return f"HTTPError{status}. Too many requests."
+            return f"HTTPError{status}. Too many requests.", "danger"
         elif status in range(500, 512, 1):
-            return f"HTTPError{status}. Server error. heroeslounge.gg might be down or overloaded. Try again at a later time."
-    return ''
+            return f"HTTPError{status}. Server error. heroeslounge.gg might be down or overloaded. Try again at a later time.", "danger"
+    return '', ''
