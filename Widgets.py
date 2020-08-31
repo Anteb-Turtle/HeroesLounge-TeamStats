@@ -17,9 +17,8 @@ class TeamWidget(tc.TeamRawData):
                                   'Wait for the data to be collected from heroeslounge.gg and then click "Display figures".</p>'+
                                   '<p>Source code is available at https://github.com/Anteb-Turtle/HeroesLounge-TeamStats</p>')
         tag_label = widgets.Label(value='Team tag:')
-        team_label = widgets.Label(value='Team name:')
         self.team_tag = widgets.Text(tag)
-        self.team_name = widgets.Text(name)
+        self.team_label = widgets.Label(value="Tag can be found in the team's URL on heroeslounge.gg")
         self.w_seasons = widgets.SelectMultiple(options=[0,1,2,3,4,5,6,7,8,9],
                                         value= n,
                                         description='seasons',
@@ -39,7 +38,7 @@ class TeamWidget(tc.TeamRawData):
         buttonlabel1 = widgets.HBox([self.button1, self.label1])
         buttonlabel2 = widgets.HBox([self.button2, self.label2])
         left_side = widgets.VBox([tag_label, self.team_tag, 
-                                  team_label, self.team_name, buttonlabel0,
+                                  self.team_label, buttonlabel0,
                                   self.w_seasons, buttonlabel1, 
                                   self.progress, buttonlabel2,
                                   self.label_error])
@@ -65,8 +64,14 @@ class TeamWidget(tc.TeamRawData):
     def instantiate(self, *args): 
         ## Called only when the button0 is pressed
         self.label0.value = 'Checking...'
-        super().__init__(self.team_tag.value, self.team_name.value)
+        super().__init__(self.team_tag.value, longname = None)
         self.label_error.value, self.progress.bar_style = fun.check_http_error(self.team_doc)
+        
+        if self.team_longname:
+            self.team_label.value = "Team name: " + self.team_longname 
+        else:
+            self.team_label.value = "Error in team name"
+
         if hasattr(self, 'seasons_names'):
             if self.seasons_names:
                 self.w_seasons.options = self.seasons_names
