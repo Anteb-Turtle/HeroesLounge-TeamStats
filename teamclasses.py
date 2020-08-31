@@ -19,14 +19,11 @@ import datetime as dt
 import supportfunctions as fun
 import formatdata as fd
 
-##
-plt.rc('font',size=8)
-##
 
 class Team():
     """ This class is just a common init method for the others classes
     """
-    def __init__(self, shortname, longname, list_of_last_seasons=[]):
+    def __init__(self, shortname, longname = None, list_of_last_seasons=[]):
         self.matchs_list = []
         self.team_shortname = shortname
         self.team_longname = longname
@@ -37,7 +34,7 @@ class TeamRawData(Team):
     Use either gather_online_data() or load_from_json() to create
     a list of dict containing all data from the selected seasons for the team
     """
-    def __init__(self, shortname, longname, list_of_last_seasons=[], **kwargs):
+    def __init__(self, shortname, longname = None, list_of_last_seasons=[], **kwargs):
         super().__init__(shortname, longname, list_of_last_seasons)
         self.step = 0
         self.max_value = 9
@@ -58,6 +55,8 @@ class TeamRawData(Team):
         ## Retreive seasons list
         if not isinstance(self.team_doc, int):
             self.all_seasons, self.seasons_names = self._retreive_season_list(self.team_doc)
+            if self.team_longname is None:
+                self.team_longname = self._retreive_longname(self.team_doc)
 
     def set_seasons(self, seasons_list):
         """ Set the seasons to be searched on heroeslounge.gg
@@ -124,6 +123,12 @@ class TeamRawData(Team):
         else:
             ids, names = None, None
         return ids, names
+    
+    def _retreive_longname(self, doc):
+        """ Returns a team full name from its html code on the website
+        """
+        longname = doc.find('h1', {'class':'block-title wow zoomIn'}).text
+        return longname
     
     def _filter_season_list(self, ids, seasons_filter):
         """ Filters the seasons of interest from a list of seasons
