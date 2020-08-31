@@ -119,3 +119,18 @@ def team_stats_subplot(WR_df, Played_df, threshold, ax, name='', team_name='', b
     else:
         ax.set_title(team_name+' winrate by hero: '+name, fontsize=8)
     ax.set_xticklabels(list(WR_df.index), fontsize=8)
+
+def check_http_error(status):
+    """
+        Helper function for widgets. Returns some information about an HTTP error.
+    """
+    if isinstance(status, int):
+        if status == 200:
+            return '', ''
+        elif status in range(400, 452, 1):
+            return f"HTTPError{status}. Bad request: change parameters and try again.", "danger"
+        elif status == 429:
+            return f"HTTPError{status}. Too many requests.", "danger"
+        elif status in range(500, 512, 1):
+            return f"HTTPError{status}. Server error. heroeslounge.gg might be down or overloaded. Try again at a later time.", "danger"
+    return '', ''

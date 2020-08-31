@@ -19,14 +19,11 @@ import datetime as dt
 import supportfunctions as fun
 import formatdata as fd
 
-##
-plt.rc('font',size=8)
-##
 
 class Team():
     """ This class is just a common init method for the others classes
     """
-    def __init__(self, shortname, longname, list_of_last_seasons=[]):
+    def __init__(self, shortname, longname = None, list_of_last_seasons=[]):
         self.matchs_list = []
         self.team_shortname = shortname
         self.team_longname = longname
@@ -37,7 +34,7 @@ class TeamRawData(Team):
     Use either gather_online_data() or load_from_json() to create
     a list of dict containing all data from the selected seasons for the team
     """
-    def __init__(self, shortname, longname, list_of_last_seasons=[], **kwargs):
+    def __init__(self, shortname, longname = None, list_of_last_seasons=[], **kwargs):
         super().__init__(shortname, longname, list_of_last_seasons)
         self.step = 0
         self.max_value = 9
@@ -56,7 +53,10 @@ class TeamRawData(Team):
 
         # =============================================================================
         ## Retreive seasons list
-        self.all_seasons, self.seasons_names = self._retreive_season_list(self.team_doc)
+        if not isinstance(self.team_doc, int):
+            self.all_seasons, self.seasons_names = self._retreive_season_list(self.team_doc)
+            if self.team_longname is None:
+                self.team_longname = self._retreive_longname(self.team_doc)
 
     def set_seasons(self, seasons_list):
         """ Set the seasons to be searched on heroeslounge.gg
@@ -87,7 +87,9 @@ class TeamRawData(Team):
         print('Requesting team html')
         url = "https://heroeslounge.gg/team/view/" + self.team_shortname
         result = requests.get(url)
-        result.raise_for_status()
+        #result.raise_for_status()
+        if not result.ok:
+            return result.status_code
         page = result.text
         doc = soup(page, features="html5lib")
         print('Request completed')
@@ -99,7 +101,9 @@ class TeamRawData(Team):
         """
         print('Requesting link:', link)
         result = requests.get(link)
-        result.raise_for_status()
+        #result.raise_for_status()
+        if not result.ok:
+            return result.status_code, 0, 0
         print('Request completed')
         page = result.text
         doc = soup(page, features="html5lib")
@@ -112,10 +116,22 @@ class TeamRawData(Team):
         """
         ## Retreive seasons list
         test = doc.find('div', {'id':'roundmatches_groups'})
-        ids = [a.get('href')[1:] for a in test.find_all('a')]
-        names = [a.contents[0].strip() for a in test.find_all('a')]
-        print(ids, names)
+        if test:
+            ids = [a.get('href')[1:] for a in test.find_all('a')]
+            names = [a.contents[0].strip() for a in test.find_all('a')]
+            print(ids, names)
+        else:
+            ids, names = None, None
         return ids, names
+    
+    def _retreive_longname(self, doc):
+        """ Returns a team full name from its html code on the website
+        """
+        longname = doc.find('h1', {'class':'block-title wow zoomIn'})
+        if longname:
+            longname = longname.text
+            return longname
+        return None
     
     def _filter_season_list(self, ids, seasons_filter):
         """ Filters the seasons of interest from a list of seasons
