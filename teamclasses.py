@@ -127,8 +127,11 @@ class TeamRawData(Team):
     def _retreive_longname(self, doc):
         """ Returns a team full name from its html code on the website
         """
-        longname = doc.find('h1', {'class':'block-title wow zoomIn'}).text
-        return longname
+        longname = doc.find('h1', {'class':'block-title wow zoomIn'})
+        if longname:
+            longname = longname.text
+            return longname
+        return None
     
     def _filter_season_list(self, ids, seasons_filter):
         """ Filters the seasons of interest from a list of seasons
