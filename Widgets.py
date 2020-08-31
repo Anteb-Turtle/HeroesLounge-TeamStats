@@ -27,6 +27,7 @@ class TeamWidget(tc.TeamRawData):
         button0 = widgets.Button(description="Check team")
         self.button1 = widgets.Button(description="Submit and run", disabled=True)
         self.button2 = widgets.Button(description="Display figures", disabled=True)
+        self.label0 = widgets.Label(value='')
         self.label1 = widgets.Label(value='')
         self.label2 = widgets.Label(value='')
         self.label_error = widgets.Label(value='')
@@ -34,12 +35,13 @@ class TeamWidget(tc.TeamRawData):
         
         self.out1, self.out2, self.out3, self.out4 = widgets.Output(), widgets.Output(), widgets.Output(), widgets.Output()
         
-        buttonlabel1 = widgets.HBox([button0, self.label1])
-        buttonlabel2 = widgets.HBox([self.button1, self.label2])
+        buttonlabel0 = widgets.HBox([button0, self.label0])
+        buttonlabel1 = widgets.HBox([self.button1, self.label1])
+        buttonlabel2 = widgets.HBox([self.button2, self.label2])
         left_side = widgets.VBox([tag_label, self.team_tag, 
-                                  team_label, self.team_name, buttonlabel1,
-                                  self.w_seasons, buttonlabel2, 
-                                  self.progress, self.button2,
+                                  team_label, self.team_name, buttonlabel0,
+                                  self.w_seasons, buttonlabel1, 
+                                  self.progress, buttonlabel2,
                                   self.label_error])
         right_side = widgets.Tab()
         right_side.children = [self.out1, self.out2, self.out3, self.out4]
@@ -62,7 +64,7 @@ class TeamWidget(tc.TeamRawData):
         
     def instantiate(self, *args): 
         ## Called only when the button0 is pressed
-        self.label1.value = 'Checking...'
+        self.label0.value = 'Checking...'
         super().__init__(self.team_tag.value, self.team_name.value)
         self.label_error.value, self.progress.bar_style = fun.check_http_error(self.team_doc)
         if hasattr(self, 'seasons_names'):
@@ -70,30 +72,30 @@ class TeamWidget(tc.TeamRawData):
                 self.w_seasons.options = self.seasons_names
                 self.w_seasons.disabled = False
                 self.button1.disabled = False
-                self.label1.value = 'Done'
+                self.label0.value = 'Done'
             else:
                 self.label_error.value = f"Cannot find played seasons for team {self.team_tag.value}"
-                self.label1.value = 'Error'
+                self.label0.value = 'Error'
         else:
-            self.label1.value = 'Error'
+            self.label0.value = 'Error'
         
     def submit_input(self, *args):
         ## Called only when the button1 is pressed
         list_seasons = [self.all_seasons[i] for i,n in enumerate(self.seasons_names) if n in self.w_seasons.value]
         self.set_seasons(list_seasons)
         ## Import data
-        self.label2.value = 'Wait...'
+        self.label1.value = 'Wait...'
         self.gather_online_data()
         ## Process data: convert to dataframes
         self.team_display = tc.TeamDisplayData(raw_data = self)
         self.button2.disabled = False
-        self.label2.value = 'Done'
+        self.label1.value = 'Done'
         return self.team_display
     
     def plotter(self, *args):
         ## Called only when the button2 is pressed
         if hasattr(self, 'team_display'):
-            self.label.value = 'Wait...'
+            self.label2.value = 'Wait...'
             with self.out1:
                 fig1 = self.players_scatter()
             with self.out2:
@@ -102,7 +104,7 @@ class TeamWidget(tc.TeamRawData):
                 fig3 = self.per_player()
             with self.out4:
                 fig4 = self.per_map()
-            self.label.value = 'Done'
+            self.label2.value = 'Done'
             return fig1, fig2, fig3, fig4
         else:
             return
