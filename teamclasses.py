@@ -281,8 +281,8 @@ class TeamRawData(Team):
             ## Store all data in a dictionnary
             match_data = {'match': link.split('/')[-1], 'games_id': games_id, 'teams': teams, \
                 'picks_team_1': round_picks_team1, 'picks_team_2': round_picks_team2, \
-                'bans_team_1': round_bans_team1, 'bans_team_2': round_bans_team2, 'durations': duration, \
-                'maps': maps_played, 'winners': winner}
+                'bans_team_1': round_bans_team1, 'bans_team_2': round_bans_team2, 'durations': durations, \
+                'maps': maps_played, 'winners': winners}
             matchs_data.append(match_data)
 
         print('---- All data gathered ----')
