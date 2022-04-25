@@ -178,7 +178,19 @@ class TeamRawData(Team):
         picks_team1 = dict(zip(players[0:5], picks[0:5]))
         picks_team2 = dict(zip(players[5:10], picks[5:10]))
 
-        return teams, picks_team1, picks_team2, bans_team1, bans_team2
+        duration = game.find('div', {'class':"col-12 col-md-2"})
+        duration = duration.text.split()[1]
+
+        map_played = game.find('span', {'class':"badge badge-info"})
+        map_played = map_played.text
+
+        winner = game.find('span', {'class':["badge badge-success float-left", "badge badge-success float-right"]}).attrs['class'][2]
+        if 'float-right' in winner:
+            winner = team1
+        else:
+            winner = team2
+
+        return teams, picks_team1, picks_team2, bans_team1, bans_team2, duration, map_played, winner
 
     def gather_online_data(self, opt_seasons=[]):
         """ Reteives inforamtion from Heroeslounge.gg
@@ -239,24 +251,32 @@ class TeamRawData(Team):
             round_picks_team2 = []
             round_bans_team1 = []
             round_bans_team2 = []
+            durations = []
+            maps_played = []
+            winners = []
+            i = 0
             for game in games:
-                teams, picks_team1, picks_team2, bans_team1, bans_team2 = self._retreive_game_data(game)
-                round_picks_team1.append(picks_team1)
-                round_picks_team2.append(picks_team2)
-                round_bans_team1.append(bans_team1)
-                round_bans_team2.append(bans_team2)
+                teams_, picks_team1, picks_team2, bans_team1, bans_team2, duration, map_played, winner = self._retreive_game_data(game)
+                if i ==0:
+                    teams = teams_
+                #TODO: attribuer les picks+autres valeur à une liste en fonction de "teams"
+                if teams == teams_:
+                    round_picks_team1.append(picks_team1)
+                    round_picks_team2.append(picks_team2)
+                    round_bans_team1.append(bans_team1)
+                    round_bans_team2.append(bans_team2)
+                else:
+                    round_picks_team2.append(picks_team1)
+                    round_picks_team1.append(picks_team2)
+                    round_bans_team2.append(bans_team1)
+                    round_bans_team1.append(bans_team2)
+                durations.append(duration)
+                maps_played.append(map_played)
+                winners.append(winner)
+                i += 1
 
             print('Match data gathered')
             self.step += 1
-
-            duration = doc1.find_all('div', {'class':"col-12 col-md-2"})
-            duration = [d.text.split()[1] for d in duration]
-
-            maps_played = doc1.find_all('span', {'class':"badge badge-info"})
-            maps_played = [m.text for m in maps_played]
-
-            winner = doc1.findAll('span', {'class':["badge badge-success float-left", "badge badge-success float-right"]})
-            winner = [teams[0] if w.get('class')[2] == "float-right" else teams[1] for w in winner]
 
             ## Store all data in a dictionnary
             match_data = {'match': link.split('/')[-1], 'games_id': games_id, 'teams': teams, \
